@@ -1,0 +1,12 @@
+url: ~
+template:
+  bootstrap: 5
+
+reference:
+- title: Write analytical tables
+  contents:
+  - write_analytical_table
+- title: Building blocks
+  contents:
+  - make_summary_row
+  - col_letter

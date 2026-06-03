@@ -1,0 +1,81 @@
+---
+title: "Getting started with GsheetGenie"
+output: rmarkdown::html_vignette
+vignette: >
+  %\VignetteIndexEntry{Getting started with GsheetGenie}
+  %\VignetteEngine{knitr::rmarkdown}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment  = "#>",
+  eval     = FALSE
+)
+```
+
+## The headline workflow
+
+```{r}
+library(GsheetGenie)
+library(googlesheets4)
+
+ss <- gs4_create("Q1 sales analysis")
+
+write_analytical_table(
+  ss,
+  sales_q1,
+  sheet     = "Sales",
+  title     = "Q1 Sales by Region",
+  summaries = c(Total = "SUM", Average = "AVERAGE")
+)
+```
+
+The resulting sheet:
+
+| Row | Content                              |
+| --- | ------------------------------------ |
+| 1   | Title row                            |
+| 2   | (blank)                              |
+| 3   | Column headers                       |
+| 4–N | Data                                 |
+| N+1 | First summary row                    |
+| N+2 | Second summary row                   |
+
+## Restricting which columns get summarized
+
+By default, summaries apply to every numeric column. Pass `cols` to restrict:
+
+```{r}
+write_analytical_table(
+  ss,
+  sales_q1,
+  sheet     = "Sales",
+  title     = "Q1 Sales by Region",
+  summaries = c(Total = "SUM"),
+  cols      = c("revenue", "units")
+)
+```
+
+## Composing your own layouts
+
+For non-standard layouts, drop down a level. `make_summary_row()` returns a
+one-row tibble whose numeric columns are `gs4_formula()`-wrapped strings — ready
+for `googlesheets4::sheet_append()`.
+
+```{r}
+sheet_write(sales_q1, ss, sheet = "Sales")
+
+totals <- make_summary_row(
+  sales_q1,
+  data_start_row = 2,
+  label          = "Total",
+  fn             = "SUM"
+)
+
+sheet_append(ss, totals, sheet = "Sales")
+```
+
+`col_letter()` converts a 1-based column index to its A1 letter
+(`col_letter(28)` returns `"AB"`) if you need to assemble formulas by hand.

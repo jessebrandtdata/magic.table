@@ -1,0 +1,23 @@
+Package: GsheetGenie
+Title: Build Analytical Google Sheets from R
+Version: 0.0.0.9000
+Authors@R:
+    person("Jesse", "Brandt", , "jesse.a.brandt@gmail.com", role = c("aut", "cre"))
+Description: Helpers for writing data tables surrounded by live-formula
+    summary rows (sums, means, etc.) to Google Sheets via 'googlesheets4'.
+    Focuses on formula-and-layout logic; no formatting or styling.
+License: MIT + file LICENSE
+Encoding: UTF-8
+Roxygen: list(markdown = TRUE)
+Imports:
+    googlesheets4,
+    tibble
+Suggests:
+    testthat (>= 3.0.0),
+    knitr,
+    rmarkdown
+Config/testthat/edition: 3
+VignetteBuilder: knitr
+URL: https://github.com/jesseabrandt/GsheetGenie
+BugReports: https://github.com/jesseabrandt/GsheetGenie/issues
+Config/roxygen2/version: 8.0.0
