@@ -18,6 +18,6 @@ Suggests:
     rmarkdown
 Config/testthat/edition: 3
 VignetteBuilder: knitr
-URL: https://github.com/jesseabrandt/GsheetGenie
-BugReports: https://github.com/jesseabrandt/GsheetGenie/issues
+URL: https://github.com/jessebrandtdata/GsheetGenie
+BugReports: https://github.com/jessebrandtdata/GsheetGenie/issues
 Config/roxygen2/version: 8.0.0
