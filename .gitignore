@@ -3,6 +3,9 @@
 .RData
 .Ruserdata
 *.Rproj
-docs/
+# pkgdown generates its site under docs/; ignore that, but keep the
+# docs/superpowers/ design record (specs + plans) tracked.
+/docs/*
+!/docs/superpowers/
 inst/doc/
 .mcp.json

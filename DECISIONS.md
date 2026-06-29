@@ -33,3 +33,8 @@ See `~/workspace/docs/decision-log.md` for the convention.
 - **Choice:** Class renamed sheet_frame -> magic.table (dotted, mirrors data.frame). Constructor: magic.table(df) (mirrors data.frame() directly; avoids the as.<generic> S3 footgun). It is an ABSTRACT recorded-computation primitive holding (1) column provenance (post-creation edits) and (2) an optional synced external table (sheets/excel/disk/db) to reconcile against external edits. Sheets is one export backend — built now; architect for the abstraction.
 - **Why:** Jesse's call from the /decisions drain (his taste + product direction; supersedes the provisional sheet_frame). Constructor form magic.table() is the faithful data.frame() mirror.
 - **Reversible:** no · **Decided by:** agent
+
+## 2026-06-29 — Track docs/superpowers/ design records (narrow the docs/ gitignore)
+- **Choice:** Narrowed the .gitignore 'docs/' rule to '/docs/*' + '!/docs/superpowers/' so pkgdown's generated site stays ignored but the docs/superpowers/ specs+plans are tracked. Committed the existing 2026-05-19 mutate-to-sheets spec/plan and the new 2026-06-29 magic.table abstraction design.
+- **Why:** The broad 'docs/' ignore (for pkgdown output) also hid the design record. Jesse reviews on a different machine, so a gitignored design doc is invisible to him; tracking docs/superpowers/ makes the design reviewable in the PR. .Rbuildignore already excludes docs/superpowers from the build.
+- **Reversible:** yes · **Decided by:** agent
