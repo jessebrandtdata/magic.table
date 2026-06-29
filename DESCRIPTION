@@ -10,7 +10,9 @@ License: MIT + file LICENSE
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
 Imports:
+    dplyr,
     googlesheets4,
+    rlang,
     tibble
 Suggests:
     testthat (>= 3.0.0),
