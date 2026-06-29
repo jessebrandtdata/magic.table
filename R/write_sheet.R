@@ -49,3 +49,42 @@ as_sheet_cells <- function(sf, start_row = 1L) {
   }
   tibble::as_tibble(data)
 }
+
+#' Write a sheet_frame to a Google Sheet as live formulas
+#'
+#' Materializes `sf` via [as_sheet_cells()] and writes the resulting cell
+#' tibble to `sheet` in `ss` starting at `start_row`. Formula columns land
+#' as live `=`-prefixed cells; other columns pass through their R values.
+#'
+#' v1 writes the header row + data rows in one call. It does not add title
+#' rows or summary rows — compose with [make_summary_row()] +
+#' [googlesheets4::sheet_append()] for richer layouts.
+#'
+#' @param sf A [sheet_frame][as_sheet_frame].
+#' @param ss A Google Sheets identifier accepted by
+#'   [googlesheets4::range_write()] (URL, sheet ID, or `dribble`).
+#' @param sheet Single non-empty character string. The sheet (tab) name.
+#' @param start_row Single positive integer. 1-based row of the header.
+#'   Defaults to `1`.
+#' @param .writer Function used to perform the write. Defaults to
+#'   [googlesheets4::range_write()]. Override in tests.
+#'
+#' @return The cell tibble that was written, invisibly.
+#' @export
+write_sheet <- function(sf, ss, sheet, start_row = 1L,
+                        .writer = googlesheets4::range_write) {
+  if (!inherits(sf, "sheet_frame")) {
+    stop("`sf` must be a sheet_frame.", call. = FALSE)
+  }
+  if (is.null(ss)) {
+    stop("`ss` must not be NULL.", call. = FALSE)
+  }
+  if (!is.character(sheet) || length(sheet) != 1L || is.na(sheet) ||
+      !nzchar(sheet)) {
+    stop("`sheet` must be a single non-empty character string.", call. = FALSE)
+  }
+  cells <- as_sheet_cells(sf, start_row = start_row)
+  range <- paste0(sheet, "!A", as.integer(start_row))
+  .writer(ss, data = cells, range = range)
+  invisible(cells)
+}
