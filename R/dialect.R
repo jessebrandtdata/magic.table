@@ -70,6 +70,16 @@ register_sheet_translator <- function(name, fn) {
   the$translators[["*"]] <- .binop("*")
   the$translators[["/"]] <- .binop("/")
   the$translators[["^"]] <- .binop("^")
+
+  # Grouping: `(x)` parses as a call to `(`. Pass the inner fragment through;
+  # the surrounding operator's translator adds parens where precedence needs them.
+  the$translators[["("]] <- function(args, ctx) {
+    if (length(args) != 1L) {
+      stop("grouping `(` expects 1 argument, got ", length(args), ".",
+           call. = FALSE)
+    }
+    args[[1]]
+  }
 }
 
 # Install defaults at package load.
