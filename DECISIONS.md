@@ -38,3 +38,13 @@ See `~/workspace/docs/decision-log.md` for the convention.
 - **Choice:** Narrowed the .gitignore 'docs/' rule to '/docs/*' + '!/docs/superpowers/' so pkgdown's generated site stays ignored but the docs/superpowers/ specs+plans are tracked. Committed the existing 2026-05-19 mutate-to-sheets spec/plan and the new 2026-06-29 magic.table abstraction design.
 - **Why:** The broad 'docs/' ignore (for pkgdown output) also hid the design record. Jesse reviews on a different machine, so a gitignored design doc is invisible to him; tracking docs/superpowers/ makes the design reviewable in the PR. .Rbuildignore already excludes docs/superpowers from the build.
 - **Reversible:** yes · **Decided by:** agent
+
+## 2026-06-29 — magic.table architecture (Q1-Q4)
+- **Choice:** Q1 minimal ops-record + derived accessor; Q2 no-clobber+warn on external divergence; Q3 export BOTH magic.table(df) constructor and as.magic.table() coercer; Q4 wrap a tibble now, revisit inherit (north_star 'based on tibble' leans inherit later)
+- **Why:** Q1/Q2 reversible defaults (safe-by-default sync); Q3/Q4 Jesse's API-surface + architecture calls
+- **Reversible:** yes · **Decided by:** jesse
+
+## 2026-06-29 — RESOLVED (Jesse, /decisions): magic.table architecture Q1–Q4
+- **Choice:** Q1 provenance = minimal ops-record + derived provenance() accessor (no new stored state). Q2 reconciliation on external divergence = no-clobber + warn by default; opt-in overwrite later. Q3 constructor = export BOTH magic.table(df) AND as.magic.table() coercer. Q4 = start WRAP now (move-fast), keep the inherit-from-tibble path open for a later revisit (north_star 'based on tibble' leans inherit).
+- **Why:** Jesse's /decisions answers to the 4 deferred questions. Proceed building the deferred layers (coercer, provenance accessor, sync+reconciliation) under these.
+- **Reversible:** no · **Decided by:** agent

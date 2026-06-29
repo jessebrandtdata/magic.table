@@ -6,7 +6,7 @@
 \alias{GsheetGenie-package}
 \title{GsheetGenie: Build Analytical Google Sheets from R}
 \description{
-Build Google Sheets whose derived columns are live formulas rather than pre-computed values. Wrap a data frame with 'as_sheet_frame()' and a lazy 'dplyr::mutate()' records each tidy expression, translating it to A1 spreadsheet-formula syntax written via 'googlesheets4'. Also ships eager helpers for data tables flanked by live-formula summary rows (sums, means, etc.). Focuses on formula-and-layout logic; no formatting or styling.
+Build external tables whose derived columns are live formulas rather than pre-computed values. Wrap a data frame with 'magic.table()' to get a recorded-computation table: a lazy 'dplyr::mutate()' records each tidy expression as column provenance instead of evaluating it. The first export backend translates those expressions to A1 spreadsheet-formula syntax and writes them to Google Sheets via 'googlesheets4'. Also ships eager helpers for data tables flanked by live-formula summary rows (sums, means, etc.). Focuses on formula-and-layout logic; no formatting or styling.
 }
 \seealso{
 Useful links:

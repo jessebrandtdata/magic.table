@@ -31,3 +31,18 @@ test_that("print.magic.table shows schema, recorded ops, and backend", {
   expect_true(any(grepl("0 recorded op", out)))
   expect_true(any(grepl("backend", out)))
 })
+
+test_that("as.magic.table coerces a data frame like magic.table()", {
+  df <- data.frame(a = 1:2, b = 3:4)
+  expect_equal(as.magic.table(df), magic.table(df))
+  expect_s3_class(as.magic.table(df), "magic.table")
+})
+
+test_that("as.magic.table is idempotent on a magic.table (keeps recorded ops)", {
+  mt <- magic.table(data.frame(a = 1:2)) |> dplyr::mutate(b = a + 1)
+  expect_identical(as.magic.table(mt), mt)
+})
+
+test_that("as.magic.table rejects non-data-frames", {
+  expect_error(as.magic.table(1:3), "must be a data frame")
+})

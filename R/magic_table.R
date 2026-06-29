@@ -45,6 +45,28 @@ magic.table <- function(df) {
   )
 }
 
+#' Coerce an object to a magic.table
+#'
+#' A coercer counterpart to the [magic.table()] constructor (the pair mirrors
+#' `data.frame()` / `as.data.frame()`). Coerces a data frame to a `magic.table`;
+#' returns an existing `magic.table` unchanged (recorded ops preserved).
+#'
+#' @param x A data frame or an existing `magic.table`.
+#' @param ... Ignored, for future extensibility.
+#'
+#' @return A [magic.table].
+#'
+#' @examples
+#' as.magic.table(data.frame(a = 1:2, b = 3:4))
+#'
+#' @export
+as.magic.table <- function(x, ...) {
+  if (inherits(x, "magic.table")) {
+    return(x)
+  }
+  magic.table(x)
+}
+
 # Internal accessors. Not exported.
 magic_table_data    <- function(x) x$data
 magic_table_ops     <- function(x) x$ops

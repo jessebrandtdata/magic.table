@@ -2,6 +2,7 @@
 
 S3method(mutate,magic.table)
 S3method(print,magic.table)
+export(as.magic.table)
 export(as_sheet_cells)
 export(col_letter)
 export(magic.table)
