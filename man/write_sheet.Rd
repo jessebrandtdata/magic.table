@@ -2,18 +2,12 @@
 % Please edit documentation in R/write_sheet.R
 \name{write_sheet}
 \alias{write_sheet}
-\title{Write a sheet_frame to a Google Sheet as live formulas}
+\title{Write a magic.table to a Google Sheet as live formulas}
 \usage{
-write_sheet(
-  sf,
-  ss,
-  sheet,
-  start_row = 1L,
-  .writer = googlesheets4::range_write
-)
+write_sheet(x, ss, sheet, start_row = 1L, .writer = googlesheets4::range_write)
 }
 \arguments{
-\item{sf}{A \link[=as_sheet_frame]{sheet_frame}.}
+\item{x}{A \link{magic.table}.}
 
 \item{ss}{A Google Sheets identifier accepted by
 \code{\link[googlesheets4:range_write]{googlesheets4::range_write()}} (URL, sheet ID, or \code{dribble}).}
@@ -30,12 +24,13 @@ Defaults to \code{1}.}
 The cell tibble that was written, invisibly.
 }
 \description{
-Materializes \code{sf} via \code{\link[=as_sheet_cells]{as_sheet_cells()}} and writes the resulting cell
+Materializes \code{x} via \code{\link[=as_sheet_cells]{as_sheet_cells()}} and writes the resulting cell
 tibble to \code{sheet} in \code{ss} starting at \code{start_row}. Formula columns land
 as live \code{=}-prefixed cells; other columns pass through their R values.
 }
 \details{
-v1 writes the header row + data rows in one call. It does not add title
-rows or summary rows — compose with \code{\link[=make_summary_row]{make_summary_row()}} +
-\code{\link[googlesheets4:sheet_append]{googlesheets4::sheet_append()}} for richer layouts.
+This is the Google Sheets backend for a \link{magic.table}. v1 writes the header
+row + data rows in one call; it does not add title rows or summary rows —
+compose with \code{\link[=make_summary_row]{make_summary_row()}} + \code{\link[googlesheets4:sheet_append]{googlesheets4::sheet_append()}} for
+richer layouts.
 }

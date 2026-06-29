@@ -80,16 +80,17 @@ sheet_append(ss, totals, sheet = "Sales")
 `col_letter()` converts a 1-based column index to its A1 letter
 (`col_letter(28)` returns `"AB"`) if you need to assemble formulas by hand.
 
-## Lazy formula mutate
+## The magic.table: recorded-computation tables
 
-The helpers above compute summaries eagerly in R. The lazy interface goes
-further: `as_sheet_frame()` wraps a data frame so that `dplyr::mutate()`
-records *formula columns* instead of computing them. The expressions are
-translated to Sheets A1 notation and written as **live cells** when you call
-`write_sheet()` — so editing a source cell in Sheets recomputes the derived
-columns.
+The helpers above compute summaries eagerly in R. A `magic.table` goes further:
+it wraps a data frame so that `dplyr::mutate()` *records* each expression as
+column provenance instead of computing it. Those recorded computations are then
+**exported as live formulas** to an external table — Google Sheets today (other
+backends, and reconciling external edits, are on the roadmap). Editing a source
+cell in Sheets recomputes the derived columns, because they are real formulas,
+not pasted values.
 
-```{r lazy-mutate}
+```{r magic-table}
 library(GsheetGenie)
 library(dplyr)
 
@@ -100,7 +101,7 @@ df <- tibble::tibble(
 )
 
 df |>
-  as_sheet_frame() |>
+  magic.table() |>
   mutate(margin     = sales - cost,
          margin_pct = margin / sales) |>
   write_sheet(ss, sheet = "Sales", start_row = 3)
@@ -120,7 +121,7 @@ library(GsheetGenie)
 library(dplyr)
 
 tibble::tibble(sales = c(120, 80), cost = c(40, 30)) |>
-  as_sheet_frame() |>
+  magic.table() |>
   mutate(margin = sales - cost,
          margin_pct = margin / sales) |>
   as_sheet_cells(start_row = 3)

@@ -2,12 +2,12 @@
 % Please edit documentation in R/write_sheet.R
 \name{as_sheet_cells}
 \alias{as_sheet_cells}
-\title{Materialize a sheet_frame's pending ops into a cell tibble (pure)}
+\title{Materialize a magic.table's recorded ops into a cell tibble (pure)}
 \usage{
-as_sheet_cells(sf, start_row = 1L)
+as_sheet_cells(x, start_row = 1L)
 }
 \arguments{
-\item{sf}{A \link[=as_sheet_frame]{sheet_frame}.}
+\item{x}{A \link{magic.table}.}
 
 \item{start_row}{Single positive integer. The 1-based sheet row where the
 header lands; data cells live at rows \code{start_row + 1} .. \code{start_row + nrow}.}
@@ -16,7 +16,7 @@ header lands; data cells live at rows \code{start_row + 1} .. \code{start_row + 
 A tibble; formula columns hold \code{gs4_formula()} strings.
 }
 \description{
-Walks every pending \link[dplyr:mutate]{mutate()} op and translates each
+Walks every recorded \link[dplyr:mutate]{mutate()} op and translates each
 captured expression into a column of \code{=}-prefixed
 \code{\link[googlesheets4:gs4_formula]{googlesheets4::gs4_formula()}} strings, anchored at \code{start_row}. Returns
 the resulting tibble without touching Google Sheets.

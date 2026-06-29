@@ -23,3 +23,13 @@ See `~/workspace/docs/decision-log.md` for the convention.
 - **Choice:** First wave = the lazy sheet_frame + dplyr::mutate -> A1 formula translator (per the 2026-05-19 spec). Deferred to later waves: the R-function-reference (closure-computed) column branch, multi-sheet placement of derived columns, the stored gsheet connection object, and change-polling / no-clobber-on-overwrite.
 - **Why:** north_star describes a larger magic_table vision; the formula branch is the concrete, already-specced, independently-evaluable slice. Shipping it first proves the lazy-frame core that the other branches build on. Scope is additive/reversible — later waves extend, they don't undo this.
 - **Reversible:** yes · **Decided by:** agent
+
+## 2026-06-29 — magic.table class name + direction
+- **Choice:** magic.table (mirrors data.frame); abstract recorded-computation primitive with column provenance + optional synced external table (sheets/excel/disk/db); Sheets first, architect for abstraction
+- **Why:** Jesse: sheets is just one export format; the value is recorded computations + provenance + external-edit sync, worth building as a primitive even if it re-treads dplyr
+- **Reversible:** yes · **Decided by:** jesse
+
+## 2026-06-29 — RESOLVED: class is magic.table (Jesse, /decisions) — abstract recorded-computation primitive
+- **Choice:** Class renamed sheet_frame -> magic.table (dotted, mirrors data.frame). Constructor: magic.table(df) (mirrors data.frame() directly; avoids the as.<generic> S3 footgun). It is an ABSTRACT recorded-computation primitive holding (1) column provenance (post-creation edits) and (2) an optional synced external table (sheets/excel/disk/db) to reconcile against external edits. Sheets is one export backend — built now; architect for the abstraction.
+- **Why:** Jesse's call from the /decisions drain (his taste + product direction; supersedes the provisional sheet_frame). Constructor form magic.table() is the faithful data.frame() mirror.
+- **Reversible:** no · **Decided by:** agent

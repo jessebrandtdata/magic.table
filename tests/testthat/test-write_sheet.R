@@ -1,13 +1,13 @@
 test_that("write_sheet validates its arguments", {
-  sf <- as_sheet_frame(data.frame(a = 1:2))
-  expect_error(write_sheet("not a frame", "ss", "Sheet1"), "must be a sheet_frame")
-  expect_error(write_sheet(sf, NULL, "Sheet1"),    "`ss` must not be NULL")
-  expect_error(write_sheet(sf, "ss", 123),         "`sheet` must be a single non-empty character string")
-  expect_error(write_sheet(sf, "ss", "Sheet1", start_row = 0), "must be a single positive integer")
+  mt <- magic.table(data.frame(a = 1:2))
+  expect_error(write_sheet("not a frame", "ss", "Sheet1"), "must be a magic.table")
+  expect_error(write_sheet(mt, NULL, "Sheet1"),    "`ss` must not be NULL")
+  expect_error(write_sheet(mt, "ss", 123),         "`sheet` must be a single non-empty character string")
+  expect_error(write_sheet(mt, "ss", "Sheet1", start_row = 0), "must be a single positive integer")
 })
 
 test_that("write_sheet calls range_write with the materialized cells", {
-  sf <- as_sheet_frame(data.frame(a = c(1, 2), b = c(3, 4))) |>
+  mt <- magic.table(data.frame(a = c(1, 2), b = c(3, 4))) |>
     dplyr::mutate(c = a + b)
 
   called <- list()
@@ -18,7 +18,7 @@ test_that("write_sheet calls range_write with the materialized cells", {
     invisible(data)
   }
 
-  write_sheet(sf, ss = "SSID", sheet = "Sales", start_row = 3L,
+  write_sheet(mt, ss = "SSID", sheet = "Sales", start_row = 3L,
               .writer = fake_range_write)
 
   expect_equal(called$ss, "SSID")

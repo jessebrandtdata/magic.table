@@ -8,7 +8,7 @@ test_that("walk_expr translates a bare column symbol to <letter><row>", {
 test_that("walk_expr errors on an unknown symbol", {
   expect_error(
     walk_expr(quote(profit), schema, row_n = 4L),
-    "column `profit` not found .* have: region, sales, cost"
+    "column `profit` not found in magic.table; have: region, sales, cost"
   )
 })
 

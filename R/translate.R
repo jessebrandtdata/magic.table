@@ -26,7 +26,7 @@ walk_expr <- function(expr, schema, row_n) {
   name <- as.character(sym)
   idx <- match(name, names(ctx$schema))
   if (is.na(idx)) {
-    stop("column `", name, "` not found in sheet_frame; have: ",
+    stop("column `", name, "` not found in magic.table; have: ",
          paste(names(ctx$schema), collapse = ", "), ".", call. = FALSE)
   }
   paste0(ctx$schema[[idx]], ctx$row_n)

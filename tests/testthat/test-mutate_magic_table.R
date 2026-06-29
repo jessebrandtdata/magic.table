@@ -1,13 +1,13 @@
-test_that("mutate.sheet_frame returns a sheet_frame", {
-  sf <- as_sheet_frame(data.frame(a = 1:2, b = 3:4))
-  out <- dplyr::mutate(sf, c = a + b)
-  expect_s3_class(out, "sheet_frame")
+test_that("mutate.magic.table returns a magic.table", {
+  mt <- magic.table(data.frame(a = 1:2, b = 3:4))
+  out <- dplyr::mutate(mt, c = a + b)
+  expect_s3_class(out, "magic.table")
 })
 
 test_that("mutate appends one op holding the captured quosures", {
-  sf <- as_sheet_frame(data.frame(a = 1:2, b = 3:4))
-  out <- dplyr::mutate(sf, c = a + b, d = c * 2)
-  ops <- sheet_frame_ops(out)
+  mt <- magic.table(data.frame(a = 1:2, b = 3:4))
+  out <- dplyr::mutate(mt, c = a + b, d = c * 2)
+  ops <- magic_table_ops(out)
   expect_equal(length(ops), 1L)
   expect_equal(ops[[1]]$verb, "mutate")
   expect_equal(names(ops[[1]]$cols), c("c", "d"))
@@ -17,9 +17,9 @@ test_that("mutate appends one op holding the captured quosures", {
 })
 
 test_that("successive mutate calls accumulate ops in order", {
-  sf <- as_sheet_frame(data.frame(a = 1:2, b = 3:4))
-  out <- dplyr::mutate(dplyr::mutate(sf, c = a + b), d = c * 2)
-  ops <- sheet_frame_ops(out)
+  mt <- magic.table(data.frame(a = 1:2, b = 3:4))
+  out <- dplyr::mutate(dplyr::mutate(mt, c = a + b), d = c * 2)
+  ops <- magic_table_ops(out)
   expect_equal(length(ops), 2L)
   expect_equal(names(ops[[1]]$cols), "c")
   expect_equal(names(ops[[2]]$cols), "d")
@@ -27,12 +27,12 @@ test_that("successive mutate calls accumulate ops in order", {
 
 test_that("mutate does not touch the underlying data tibble", {
   df <- data.frame(a = 1:2, b = 3:4)
-  sf <- as_sheet_frame(df)
-  out <- dplyr::mutate(sf, c = a + b)
-  expect_equal(sheet_frame_data(out), tibble::as_tibble(df))
+  mt <- magic.table(df)
+  out <- dplyr::mutate(mt, c = a + b)
+  expect_equal(magic_table_data(out), tibble::as_tibble(df))
 })
 
 test_that("mutate requires named arguments", {
-  sf <- as_sheet_frame(data.frame(a = 1:2))
-  expect_error(dplyr::mutate(sf, a + 1), "all mutate arguments must be named")
+  mt <- magic.table(data.frame(a = 1:2))
+  expect_error(dplyr::mutate(mt, a + 1), "all mutate arguments must be named")
 })

@@ -1,17 +1,18 @@
-#' Record pending formula columns on a sheet_frame
+#' Record pending formula columns on a magic.table
 #'
 #' S3 method for [dplyr::mutate()]. Captures the supplied expressions as
 #' quosures without evaluating them; translation to Sheets formulas happens
-#' at [write_sheet()] / [as_sheet_cells()] time.
+#' at [write_sheet()] / [as_sheet_cells()] time. The captured expressions are
+#' the column provenance — the record of how each derived column was computed.
 #'
-#' @param .data A [sheet_frame][as_sheet_frame].
+#' @param .data A [magic.table].
 #' @param ... Named expressions, e.g. `margin = sales - cost`.
 #'
-#' @return The input `sheet_frame` with one additional pending mutate op.
+#' @return The input `magic.table` with one additional recorded mutate op.
 #' @export
 #' @importFrom dplyr mutate
-#' @method mutate sheet_frame
-mutate.sheet_frame <- function(.data, ...) {
+#' @method mutate magic.table
+mutate.magic.table <- function(.data, ...) {
   quos <- rlang::enquos(...)
   if (length(quos) == 0L) return(.data)
   nms <- names(quos)

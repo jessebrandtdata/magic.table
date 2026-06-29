@@ -1,6 +1,12 @@
-#' Materialize a sheet_frame's pending ops into a cell tibble (pure)
+# ---- Google Sheets export backend ----------------------------------------
+# Sheets is the first synced-table backend for a magic.table. These functions
+# translate a magic.table's recorded computations into live A1 formulas and
+# write them. Other backends (Excel, on-disk, database) will sit alongside this
+# file in future; the magic.table core (R/magic_table.R) is backend-agnostic.
+
+#' Materialize a magic.table's recorded ops into a cell tibble (pure)
 #'
-#' Walks every pending [mutate()][dplyr::mutate] op and translates each
+#' Walks every recorded [mutate()][dplyr::mutate] op and translates each
 #' captured expression into a column of `=`-prefixed
 #' [googlesheets4::gs4_formula()] strings, anchored at `start_row`. Returns
 #' the resulting tibble without touching Google Sheets.
@@ -8,15 +14,15 @@
 #' This is the testability lever: end-to-end correctness of the lazy
 #' API can be exercised without auth.
 #'
-#' @param sf A [sheet_frame][as_sheet_frame].
+#' @param x A [magic.table].
 #' @param start_row Single positive integer. The 1-based sheet row where the
 #'   header lands; data cells live at rows `start_row + 1` .. `start_row + nrow`.
 #'
 #' @return A tibble; formula columns hold `gs4_formula()` strings.
 #' @export
-as_sheet_cells <- function(sf, start_row = 1L) {
-  if (!inherits(sf, "sheet_frame")) {
-    stop("`sf` must be a sheet_frame.", call. = FALSE)
+as_sheet_cells <- function(x, start_row = 1L) {
+  if (!inherits(x, "magic.table")) {
+    stop("`x` must be a magic.table.", call. = FALSE)
   }
   if (!is.numeric(start_row) || length(start_row) != 1L ||
       is.na(start_row) || start_row < 1 ||
@@ -25,16 +31,16 @@ as_sheet_cells <- function(sf, start_row = 1L) {
   }
   start_row <- as.integer(start_row)
 
-  data <- sf$data
+  data <- x$data
   n_rows <- nrow(data)
   data_first_row <- start_row + 1L
   data_rows <- seq.int(data_first_row, length.out = n_rows)
 
   schema <- stats::setNames(col_letter(seq_along(data)), names(data))
 
-  for (op in sf$ops) {
+  for (op in x$ops) {
     if (op$verb != "mutate") {
-      stop("unsupported pending op verb: ", op$verb, call. = FALSE)
+      stop("unsupported recorded op verb: ", op$verb, call. = FALSE)
     }
     for (nm in names(op$cols)) {
       q <- op$cols[[nm]]
@@ -50,17 +56,18 @@ as_sheet_cells <- function(sf, start_row = 1L) {
   tibble::as_tibble(data)
 }
 
-#' Write a sheet_frame to a Google Sheet as live formulas
+#' Write a magic.table to a Google Sheet as live formulas
 #'
-#' Materializes `sf` via [as_sheet_cells()] and writes the resulting cell
+#' Materializes `x` via [as_sheet_cells()] and writes the resulting cell
 #' tibble to `sheet` in `ss` starting at `start_row`. Formula columns land
 #' as live `=`-prefixed cells; other columns pass through their R values.
 #'
-#' v1 writes the header row + data rows in one call. It does not add title
-#' rows or summary rows — compose with [make_summary_row()] +
-#' [googlesheets4::sheet_append()] for richer layouts.
+#' This is the Google Sheets backend for a [magic.table]. v1 writes the header
+#' row + data rows in one call; it does not add title rows or summary rows —
+#' compose with [make_summary_row()] + [googlesheets4::sheet_append()] for
+#' richer layouts.
 #'
-#' @param sf A [sheet_frame][as_sheet_frame].
+#' @param x A [magic.table].
 #' @param ss A Google Sheets identifier accepted by
 #'   [googlesheets4::range_write()] (URL, sheet ID, or `dribble`).
 #' @param sheet Single non-empty character string. The sheet (tab) name.
@@ -71,10 +78,10 @@ as_sheet_cells <- function(sf, start_row = 1L) {
 #'
 #' @return The cell tibble that was written, invisibly.
 #' @export
-write_sheet <- function(sf, ss, sheet, start_row = 1L,
+write_sheet <- function(x, ss, sheet, start_row = 1L,
                         .writer = googlesheets4::range_write) {
-  if (!inherits(sf, "sheet_frame")) {
-    stop("`sf` must be a sheet_frame.", call. = FALSE)
+  if (!inherits(x, "magic.table")) {
+    stop("`x` must be a magic.table.", call. = FALSE)
   }
   if (is.null(ss)) {
     stop("`ss` must not be NULL.", call. = FALSE)
@@ -83,7 +90,7 @@ write_sheet <- function(sf, ss, sheet, start_row = 1L,
       !nzchar(sheet)) {
     stop("`sheet` must be a single non-empty character string.", call. = FALSE)
   }
-  cells <- as_sheet_cells(sf, start_row = start_row)
+  cells <- as_sheet_cells(x, start_row = start_row)
   range <- paste0(sheet, "!A", as.integer(start_row))
   .writer(ss, data = cells, range = range)
   invisible(cells)
