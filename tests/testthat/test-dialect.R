@@ -44,3 +44,13 @@ test_that("register_sheet_translator validates inputs", {
   expect_error(register_sheet_translator("", function(a, c) ""), "single non-empty character")
   expect_error(register_sheet_translator("ok", "not a function"), "must be a function or NULL")
 })
+
+test_that("default dialect ships every documented translator", {
+  expected <- c("+", "-", "*", "/", "^", "(",
+                "<", "<=", ">", ">=", "==", "!=",
+                "&", "|", "!",
+                "ifelse", "abs", "round", "sqrt", "pmin", "pmax", "is.na")
+  have <- names(sheet_translators())
+  missing <- setdiff(expected, have)
+  expect_equal(missing, character(0))
+})

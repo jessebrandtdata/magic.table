@@ -42,7 +42,7 @@ register_sheet_translator <- function(name, fn) {
   invisible(prev)
 }
 
-# ---- v1 defaults: binary arithmetic --------------------------------------
+# ---- v1 defaults ----------------------------------------------------------
 
 # Helper: build a translator for a left-associative binary infix operator.
 # We parenthesize each arg so precedence is preserved when nested expressions
@@ -58,7 +58,21 @@ register_sheet_translator <- function(name, fn) {
   }
 }
 
+# Helper: a binary infix where the two sides should be parenthesized for
+# safety. Conceptually distinct from `.binop` (comparison semantics) so we can
+# tighten parens differently later; identical code today.
+.infix <- .binop
+
+# Helper: build a translator that emits FN(arg1,arg2,...) for any arity.
+.fn_call <- function(sheet_name) {
+  force(sheet_name)
+  function(args, ctx) {
+    paste0(sheet_name, "(", paste(args, collapse = ","), ")")
+  }
+}
+
 .install_defaults <- function() {
+  # Arithmetic
   the$translators[["+"]] <- .binop("+")
   the$translators[["-"]] <- function(args, ctx) {
     # `-` is unary or binary; handle both.
@@ -80,6 +94,38 @@ register_sheet_translator <- function(name, fn) {
     }
     args[[1]]
   }
+
+  # Comparisons (`==` -> `=`, `!=` -> `<>`)
+  the$translators[["<"]]  <- .infix("<")
+  the$translators[["<="]] <- .infix("<=")
+  the$translators[[">"]]  <- .infix(">")
+  the$translators[[">="]] <- .infix(">=")
+  the$translators[["=="]] <- .infix("=")
+  the$translators[["!="]] <- .infix("<>")
+
+  # Logical (function-form in Sheets)
+  the$translators[["&"]] <- .fn_call("AND")
+  the$translators[["|"]] <- .fn_call("OR")
+  the$translators[["!"]] <- function(args, ctx) {
+    if (length(args) != 1L) {
+      stop("operator `!` expects 1 argument, got ", length(args), ".",
+           call. = FALSE)
+    }
+    paste0("NOT(", args[[1]], ")")
+  }
+
+  # Conditional
+  the$translators[["ifelse"]] <- .fn_call("IF")
+
+  # Curated math/stat
+  the$translators[["abs"]]   <- .fn_call("ABS")
+  the$translators[["round"]] <- .fn_call("ROUND")
+  the$translators[["sqrt"]]  <- .fn_call("SQRT")
+  the$translators[["pmin"]]  <- .fn_call("MIN")
+  the$translators[["pmax"]]  <- .fn_call("MAX")
+
+  # Predicates
+  the$translators[["is.na"]] <- .fn_call("ISBLANK")
 }
 
 # Install defaults at package load.
