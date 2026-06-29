@@ -79,3 +79,107 @@ sheet_append(ss, totals, sheet = "Sales")
 
 `col_letter()` converts a 1-based column index to its A1 letter
 (`col_letter(28)` returns `"AB"`) if you need to assemble formulas by hand.
+
+## The magic.table: recorded-computation tables
+
+The helpers above compute summaries eagerly in R. A `magic.table` goes further:
+it wraps a data frame so that `dplyr::mutate()` *records* each expression as
+column provenance instead of computing it. Those recorded computations are then
+**exported as live formulas** to an external table — Google Sheets today (other
+backends, and reconciling external edits, are on the roadmap). Editing a source
+cell in Sheets recomputes the derived columns, because they are real formulas,
+not pasted values.
+
+```{r magic-table}
+library(GsheetGenie)
+library(dplyr)
+
+df <- tibble::tibble(
+  region = c("E", "W", "S"),
+  sales  = c(120, 80, 60),
+  cost   = c( 40, 30, 20)
+)
+
+df |>
+  magic.table() |>
+  mutate(margin     = sales - cost,
+         margin_pct = margin / sales) |>
+  write_sheet(ss, sheet = "Sales", start_row = 3)
+```
+
+The `margin` column ends up holding `=(B4)-(C4)`, `=(B5)-(C5)`, … and
+`margin_pct` holds `=(D4)/(B4)`, … .
+
+### Inspecting column provenance
+
+A `magic.table` remembers how each column came to be. `provenance()` reports,
+per column, whether it is an original `source` column or one `computed` by a
+recorded `mutate()`, and the expression that defines it — derived on demand, no
+auth needed:
+
+```{r provenance, eval = TRUE}
+library(GsheetGenie)
+library(dplyr)
+
+tibble::tibble(sales = c(120, 80), cost = c(40, 30)) |>
+  magic.table() |>
+  mutate(margin = sales - cost,
+         margin_pct = margin / sales) |>
+  provenance()
+```
+
+### Previewing without auth
+
+`as_sheet_cells()` returns exactly what `write_sheet()` *would* push, without
+contacting Google — handy for sanity-checking formulas (and the testability
+lever for the whole package):
+
+```{r preview, eval = TRUE}
+library(GsheetGenie)
+library(dplyr)
+
+tibble::tibble(sales = c(120, 80), cost = c(40, 30)) |>
+  magic.table() |>
+  mutate(margin = sales - cost,
+         margin_pct = margin / sales) |>
+  as_sheet_cells(start_row = 3)
+```
+
+### Extending the translator
+
+The default dialect covers arithmetic, comparisons, logical operators,
+`ifelse`, and a small set of math/predicate functions (`abs`, `round`,
+`sqrt`, `pmin`, `pmax`, `is.na`). Anything else errors with a hint pointing
+at `register_sheet_translator()`:
+
+```{r register}
+register_sheet_translator("paste0", function(args, ctx) {
+  paste(args, collapse = "&")
+})
+```
+
+### Syncing and no-clobber reconciliation
+
+`write_sheet()` returns the `magic.table` with a **bound backend** — the
+connection (`ss` / `sheet` / `start_row`) plus a snapshot of what was written.
+Capture it to keep that connection:
+
+```{r sync, eval = FALSE}
+mt <- df |>
+  magic.table() |>
+  mutate(margin = sales - cost) |>
+  write_sheet(ss, sheet = "Sales", start_row = 3)
+```
+
+On a re-write to the same target, GsheetGenie first polls the sheet and compares
+it against that snapshot. If someone edited the sheet in the meantime, the write
+is **refused with a warning** rather than silently clobbering their edit:
+
+```{r reconcile, eval = FALSE}
+mt <- write_sheet(mt, ss, sheet = "Sales", start_row = 3)
+#> Warning: The target sheet has changed since GsheetGenie last wrote it;
+#> not overwriting. Pass `overwrite = TRUE` to write anyway.
+
+# write anyway:
+mt <- write_sheet(mt, ss, sheet = "Sales", start_row = 3, overwrite = TRUE)
+```

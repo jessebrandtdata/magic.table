@@ -9,3 +9,6 @@
 ^cran-comments\.md$
 ^CRAN-RELEASE$
 ^CRAN-SUBMISSION$
+^\.mcp\.json$
+^DECISIONS\.md$
+^north_star\.md$
