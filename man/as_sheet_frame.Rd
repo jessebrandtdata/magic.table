@@ -15,7 +15,7 @@ An object of class \code{c("sheet_frame", "tbl")}.
 \description{
 Wraps a data frame so that subsequent \link[dplyr:mutate]{mutate()} calls record
 pending formula columns instead of evaluating them. Materialize the result
-with \code{\link[googlesheets4:write_sheet]{write_sheet()}} or inspect what would be written with \code{\link[=as_sheet_cells]{as_sheet_cells()}}.
+with \code{\link[=write_sheet]{write_sheet()}} or inspect what would be written with \code{\link[=as_sheet_cells]{as_sheet_cells()}}.
 }
 \examples{
 df <- data.frame(region = c("E", "W"), sales = c(10, 20), cost = c(4, 8))

@@ -6,13 +6,13 @@
 \alias{GsheetGenie-package}
 \title{GsheetGenie: Build Analytical Google Sheets from R}
 \description{
-Helpers for writing data tables surrounded by live-formula summary rows (sums, means, etc.) to Google Sheets via 'googlesheets4'. Focuses on formula-and-layout logic; no formatting or styling.
+Build Google Sheets whose derived columns are live formulas rather than pre-computed values. Wrap a data frame with 'as_sheet_frame()' and a lazy 'dplyr::mutate()' records each tidy expression, translating it to A1 spreadsheet-formula syntax written via 'googlesheets4'. Also ships eager helpers for data tables flanked by live-formula summary rows (sums, means, etc.). Focuses on formula-and-layout logic; no formatting or styling.
 }
 \seealso{
 Useful links:
 \itemize{
-  \item \url{https://github.com/jesseabrandt/GsheetGenie}
-  \item Report bugs at \url{https://github.com/jesseabrandt/GsheetGenie/issues}
+  \item \url{https://github.com/jessebrandtdata/GsheetGenie}
+  \item Report bugs at \url{https://github.com/jessebrandtdata/GsheetGenie/issues}
 }
 
 }

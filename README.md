@@ -11,7 +11,7 @@ formula-and-layout logic — no formatting or styling features.
 
 ```r
 # install.packages("pak")
-pak::pak("jesseabrandt/GsheetGenie")
+pak::pak("jessebrandtdata/GsheetGenie")
 ```
 
 ## Usage

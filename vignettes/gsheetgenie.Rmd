@@ -79,3 +79,62 @@ sheet_append(ss, totals, sheet = "Sales")
 
 `col_letter()` converts a 1-based column index to its A1 letter
 (`col_letter(28)` returns `"AB"`) if you need to assemble formulas by hand.
+
+## Lazy formula mutate
+
+The helpers above compute summaries eagerly in R. The lazy interface goes
+further: `as_sheet_frame()` wraps a data frame so that `dplyr::mutate()`
+records *formula columns* instead of computing them. The expressions are
+translated to Sheets A1 notation and written as **live cells** when you call
+`write_sheet()` — so editing a source cell in Sheets recomputes the derived
+columns.
+
+```{r lazy-mutate}
+library(GsheetGenie)
+library(dplyr)
+
+df <- tibble::tibble(
+  region = c("E", "W", "S"),
+  sales  = c(120, 80, 60),
+  cost   = c( 40, 30, 20)
+)
+
+df |>
+  as_sheet_frame() |>
+  mutate(margin     = sales - cost,
+         margin_pct = margin / sales) |>
+  write_sheet(ss, sheet = "Sales", start_row = 3)
+```
+
+The `margin` column ends up holding `=(B4)-(C4)`, `=(B5)-(C5)`, … and
+`margin_pct` holds `=(D4)/(B4)`, … .
+
+### Previewing without auth
+
+`as_sheet_cells()` returns exactly what `write_sheet()` *would* push, without
+contacting Google — handy for sanity-checking formulas (and the testability
+lever for the whole package):
+
+```{r preview, eval = TRUE}
+library(GsheetGenie)
+library(dplyr)
+
+tibble::tibble(sales = c(120, 80), cost = c(40, 30)) |>
+  as_sheet_frame() |>
+  mutate(margin = sales - cost,
+         margin_pct = margin / sales) |>
+  as_sheet_cells(start_row = 3)
+```
+
+### Extending the translator
+
+The default dialect covers arithmetic, comparisons, logical operators,
+`ifelse`, and a small set of math/predicate functions (`abs`, `round`,
+`sqrt`, `pmin`, `pmax`, `is.na`). Anything else errors with a hint pointing
+at `register_sheet_translator()`:
+
+```{r register}
+register_sheet_translator("paste0", function(args, ctx) {
+  paste(args, collapse = "&")
+})
+```

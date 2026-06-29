@@ -17,5 +17,5 @@ The input \code{sheet_frame} with one additional pending mutate op.
 \description{
 S3 method for \code{\link[dplyr:mutate]{dplyr::mutate()}}. Captures the supplied expressions as
 quosures without evaluating them; translation to Sheets formulas happens
-at \code{\link[googlesheets4:write_sheet]{write_sheet()}} / \code{\link[=as_sheet_cells]{as_sheet_cells()}} time.
+at \code{\link[=write_sheet]{write_sheet()}} / \code{\link[=as_sheet_cells]{as_sheet_cells()}} time.
 }
