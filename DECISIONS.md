@@ -48,3 +48,8 @@ See `~/workspace/docs/decision-log.md` for the convention.
 - **Choice:** Q1 provenance = minimal ops-record + derived provenance() accessor (no new stored state). Q2 reconciliation on external divergence = no-clobber + warn by default; opt-in overwrite later. Q3 constructor = export BOTH magic.table(df) AND as.magic.table() coercer. Q4 = start WRAP now (move-fast), keep the inherit-from-tibble path open for a later revisit (north_star 'based on tibble' leans inherit).
 - **Why:** Jesse's /decisions answers to the 4 deferred questions. Proceed building the deferred layers (coercer, provenance accessor, sync+reconciliation) under these.
 - **Reversible:** no · **Decided by:** agent
+
+## 2026-07-04 — RESOLVED (Jesse, /decisions): launch export surface = ship all 9 as-is
+- **Choice:** No trimming of the public API before launch. All 9 current exports ship: `magic.table`, `as.magic.table`, `write_sheet`, `as_sheet_cells`, `provenance`, `write_analytical_table`, `make_summary_row`, `register_sheet_translator`, `sheet_translators` (plus `col_letter`, the one utility-grade export).
+- **Why:** Jesse accepted the agent's recommendation from the launch-readiness dq — each export is either core to the lazy-formula pitch or already advertised in the README, and `col_letter` is a documented composition point for `write_analytical_table`'s custom-layout path.
+- **Reversible:** yes (exports are additive; a future breaking removal would need its own decision) · **Decided by:** jesse
