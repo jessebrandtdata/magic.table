@@ -3,7 +3,18 @@ template:
   bootstrap: 5
 
 reference:
-- title: Write analytical tables
+- title: magic.table (lazy, formula-recording)
+  contents:
+  - magic.table
+  - as.magic.table
+  - provenance
+  - write_sheet
+  - as_sheet_cells
+- title: Extending the Sheets dialect
+  contents:
+  - register_sheet_translator
+  - sheet_translators
+- title: Eager summary tables
   contents:
   - write_analytical_table
 - title: Building blocks
