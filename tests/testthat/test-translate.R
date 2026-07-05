@@ -37,6 +37,31 @@ test_that("walk_expr errors on unknown call head with a helpful message", {
   )
 })
 
+test_that("walk_expr errors on a non-symbol (complex) call head", {
+  # e.g. `foo$bar()` -- the call head is itself a call, not a bare name.
+  expect_error(
+    walk_expr(quote(foo$bar()), schema, row_n = 4L),
+    "only named function calls are supported"
+  )
+})
+
+test_that("walk_expr formats large numeric literals without scientific notation", {
+  # Formulas must be literal digits; `1e+06` would be an invalid cell value.
+  expect_equal(walk_expr(1e6,     schema, row_n = 4L), "1000000")
+  expect_equal(walk_expr(1234567, schema, row_n = 4L), "1234567")
+  expect_equal(walk_expr(1e9,     schema, row_n = 4L), "1000000000")
+})
+
+test_that("walk_expr rejects non-scalar literals", {
+  expect_error(walk_expr(c(1, 2), schema, row_n = 4L),
+               "only scalar literals are supported")
+})
+
+test_that("walk_expr rejects unsupported literal types", {
+  expect_error(walk_expr(1 + 2i, schema, row_n = 4L),
+               "unsupported literal type: complex")
+})
+
 test_that("walk_expr errors on bare NA literal", {
   expect_error(walk_expr(NA,            schema, row_n = 4L), "NA literals are not supported")
   expect_error(walk_expr(NA_real_,      schema, row_n = 4L), "NA literals are not supported")

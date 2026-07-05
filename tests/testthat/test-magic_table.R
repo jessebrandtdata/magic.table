@@ -32,6 +32,31 @@ test_that("print.magic.table shows schema, recorded ops, and backend", {
   expect_true(any(grepl("backend", out)))
 })
 
+test_that("print.magic.table reports row/col counts and an unsynced backend", {
+  mt <- magic.table(data.frame(a = c(1, 2, 3), b = c(4, 5, 6)))
+  out <- paste(capture.output(print(mt)), collapse = "\n")
+  expect_match(out, "3 rows")
+  expect_match(out, "2 cols")
+  expect_match(out, "none \\(not synced\\)")
+})
+
+test_that("print.magic.table pluralizes the recorded-op count", {
+  one <- magic.table(data.frame(a = 1:2)) |> dplyr::mutate(b = a + 1)
+  out1 <- paste(capture.output(print(one)), collapse = "\n")
+  expect_match(out1, "1 recorded op\\b")   # singular, no trailing "s"
+
+  two <- one |> dplyr::mutate(c = b * 2)
+  out2 <- paste(capture.output(print(two)), collapse = "\n")
+  expect_match(out2, "2 recorded ops")
+})
+
+test_that("print.magic.table returns its input invisibly", {
+  mt <- magic.table(data.frame(a = 1))
+  capture.output(ret <- withVisible(print(mt)))
+  expect_false(ret$visible)
+  expect_identical(ret$value, mt)
+})
+
 test_that("as.magic.table coerces a data frame like magic.table()", {
   df <- data.frame(a = 1:2, b = 3:4)
   expect_equal(as.magic.table(df), magic.table(df))

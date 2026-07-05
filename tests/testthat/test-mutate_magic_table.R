@@ -36,3 +36,17 @@ test_that("mutate requires named arguments", {
   mt <- magic.table(data.frame(a = 1:2))
   expect_error(dplyr::mutate(mt, a + 1), "all mutate arguments must be named")
 })
+
+test_that("mutate rejects a mix of named and unnamed arguments", {
+  mt <- magic.table(data.frame(a = 1:2, b = 3:4))
+  expect_error(dplyr::mutate(mt, c = a + b, a - b),
+               "all mutate arguments must be named")
+})
+
+test_that("mutate with no expressions is a no-op (records nothing)", {
+  mt <- magic.table(data.frame(a = 1:2))
+  out <- dplyr::mutate(mt)
+  expect_s3_class(out, "magic.table")
+  expect_equal(length(magic_table_ops(out)), 0L)
+  expect_identical(out, mt)
+})

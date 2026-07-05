@@ -36,6 +36,30 @@ test_that("overwriting a source column keeps its position but marks it computed"
   expect_equal(prov$expr[prov$column == "sales"], "sales * 2")
 })
 
+test_that("provenance records several new columns from a single mutate op", {
+  # Two computed columns added in ONE mutate() call (one recorded op).
+  mt <- magic.table(df) |>
+    dplyr::mutate(margin = sales - cost, markup = margin / cost)
+  prov <- provenance(mt)
+  expect_equal(prov$column,
+               c("region", "sales", "cost", "margin", "markup"))
+  expect_equal(prov$origin,
+               c("source", "source", "source", "computed", "computed"))
+  expect_equal(prov$expr[prov$column == "margin"], "sales - cost")
+  expect_equal(prov$expr[prov$column == "markup"], "margin/cost")
+})
+
+test_that("a later mutate can overwrite a previously computed column", {
+  mt <- magic.table(df) |>
+    dplyr::mutate(margin = sales - cost) |>
+    dplyr::mutate(margin = margin * 2)
+  prov <- provenance(mt)
+  # margin stays in its position, keeps the latest expression.
+  expect_equal(prov$column, c("region", "sales", "cost", "margin"))
+  expect_equal(prov$origin[prov$column == "margin"], "computed")
+  expect_equal(prov$expr[prov$column == "margin"], "margin * 2")
+})
+
 test_that("provenance rejects non-magic.tables", {
   expect_error(provenance(df), "must be a magic.table")
 })
