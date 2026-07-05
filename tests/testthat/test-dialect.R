@@ -18,6 +18,40 @@ test_that("`/` translator wraps args with parens for safety", {
   expect_true(out == "A4/B4" || out == "(A4)/(B4)")
 })
 
+test_that("binary-operator translators enforce arity (contract for extensions)", {
+  tr <- sheet_translators()
+  expect_error(tr[["+"]](list("A4"), list()), "expects 2 arguments, got 1")
+  expect_error(tr[["*"]](list("A4", "B4", "C4"), list()),
+               "expects 2 arguments, got 3")
+})
+
+test_that("`-` translator handles unary, binary, and rejects higher arity", {
+  tr <- sheet_translators()
+  expect_equal(tr[["-"]](list("A4"), list()), "-(A4)")
+  expect_equal(tr[["-"]](list("A4", "B4"), list()), "(A4)-(B4)")
+  expect_error(tr[["-"]](list("A4", "B4", "C4"), list()),
+               "expects 1 or 2 arguments, got 3")
+})
+
+test_that("`(` grouping translator passes its single arg through unchanged", {
+  tr <- sheet_translators()
+  expect_equal(tr[["("]](list("A4+B4"), list()), "A4+B4")
+  expect_error(tr[["("]](list("A4", "B4"), list()), "expects 1 argument")
+})
+
+test_that("`!` translator wraps in NOT() and requires exactly one arg", {
+  tr <- sheet_translators()
+  expect_equal(tr[["!"]](list("A4"), list()), "NOT(A4)")
+  expect_error(tr[["!"]](list("A4", "B4"), list()), "expects 1 argument")
+})
+
+test_that("sheet_translators() returns an independent copy of the registry", {
+  tr <- sheet_translators()
+  tr[["+"]] <- NULL                 # mutate the returned list
+  # The live registry is unaffected.
+  expect_true("+" %in% names(sheet_translators()))
+})
+
 test_that("register_sheet_translator adds and overrides entries", {
   on.exit(register_sheet_translator("__test_fn__", NULL), add = TRUE)
   f <- function(args, ctx) paste0("TEST(", paste(args, collapse = ","), ")")
