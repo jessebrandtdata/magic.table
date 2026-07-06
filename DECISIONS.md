@@ -44,6 +44,19 @@ See `~/workspace/docs/decision-log.md` for the convention.
 - **Why:** Q1/Q2 reversible defaults (safe-by-default sync); Q3/Q4 Jesse's API-surface + architecture calls
 - **Reversible:** yes · **Decided by:** jesse
 
+## 2026-07-06 — Verify formulas by hand-paste BEFORE the public rename (Jesse)
+- **Choice:** Before the GsheetGenie -> magic.table rename/public work, ship a
+  no-auth verification artifact: `verification/make-demo.R` builds a magic.table
+  from `head(mtcars)`, records lazy mutate columns (arithmetic + a mean-based
+  ratio via a registered `mean` translator) and a summary row, materializes the
+  A1 grid, and emits `verification/demo-paste.tsv` (paste at cell A1) plus
+  `verification/PASTE-ME.md` with steps + eagerly-computed expected values. The
+  rename work proceeds only after Jesse's paste test passes.
+- **Why:** Jesse (2026-07-06 chat) wants to confirm the offline expression->A1
+  translation actually evaluates correctly in a real sheet before investing in
+  the public relaunch. Verification-first de-risks the showpiece.
+- **Reversible:** yes · **Decided by:** jesse
+
 ## 2026-06-29 — RESOLVED (Jesse, /decisions): magic.table architecture Q1–Q4
 - **Choice:** Q1 provenance = minimal ops-record + derived provenance() accessor (no new stored state). Q2 reconciliation on external divergence = no-clobber + warn by default; opt-in overwrite later. Q3 constructor = export BOTH magic.table(df) AND as.magic.table() coercer. Q4 = start WRAP now (move-fast), keep the inherit-from-tibble path open for a later revisit (north_star 'based on tibble' leans inherit).
 - **Why:** Jesse's /decisions answers to the 4 deferred questions. Proceed building the deferred layers (coercer, provenance accessor, sync+reconciliation) under these.
