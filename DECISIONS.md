@@ -57,6 +57,22 @@ See `~/workspace/docs/decision-log.md` for the convention.
   the public relaunch. Verification-first de-risks the showpiece.
 - **Reversible:** yes · **Decided by:** jesse
 
+## 2026-07-06 — openxlsx is the working Excel export backend (agent call, Jesse-approved dep)
+- **Choice:** openxlsx replaces the parked googlesheets4 live-write as the working,
+  token-free export backend: it writes real `=...` formulas into a local `.xlsx`
+  (Excel opens directly; Google Sheets gets them via File▸Import). Jesse approved
+  installing/adding openxlsx (2026-07-06). **Placement call (delegated to agent):
+  openxlsx goes in `Imports`, not Suggests** — the xlsx writer will be a core
+  exported selling point ("write live formulas to Excel, no auth"), and a headline
+  export path shouldn't fail at runtime for a missing optional dep. openxlsx is
+  well-maintained and light (Rcpp/zip/stringi, already present). Verified in the
+  checkpoint via `verification/demo-formulas.xlsx` (16 embedded formulas incl.
+  absolute-range AVERAGE). Package `R/` xlsx backend + DESCRIPTION change land in
+  the rename phase; the offline TSV path stays dependency-light and openxlsx-free.
+- **Why:** Jesse's rationale — Sheets has no token-free write API, but openxlsx +
+  Import is a real, auth-free round-trip. Imports vs Suggests left to agent.
+- **Reversible:** yes (Imports↔Suggests is a one-line DESCRIPTION change) · **Decided by:** agent
+
 ## 2026-06-29 — RESOLVED (Jesse, /decisions): magic.table architecture Q1–Q4
 - **Choice:** Q1 provenance = minimal ops-record + derived provenance() accessor (no new stored state). Q2 reconciliation on external divergence = no-clobber + warn by default; opt-in overwrite later. Q3 constructor = export BOTH magic.table(df) AND as.magic.table() coercer. Q4 = start WRAP now (move-fast), keep the inherit-from-tibble path open for a later revisit (north_star 'based on tibble' leans inherit).
 - **Why:** Jesse's /decisions answers to the 4 deferred questions. Proceed building the deferred layers (coercer, provenance accessor, sync+reconciliation) under these.

@@ -1,17 +1,27 @@
-# Paste test — do the formulas actually work?
+# Verify: do the formulas actually work?
 
-`demo-paste.tsv` is a `head(mtcars)` grid: literal data + two derived columns
-recorded as lazy `mutate()`s (`power_to_weight = hp/wt`, `mpg_vs_avg = mpg/mean(mpg)`)
-plus an `Average` summary row — all materialized offline to A1 formulas by this
-package (no API, no auth). Paste it and check the numbers match.
+Same `head(mtcars)` demo — literal data plus two derived columns recorded as lazy
+`mutate()`s (`power_to_weight = hp/wt`, `mpg_vs_avg = mpg/mean(mpg)`) and an
+`Average` summary row — materialized to real spreadsheet formulas **offline** by
+this package (no API, no auth, no token). Two artifacts, three ways to check.
 
-## Steps
+## Artifact 1 — `demo-formulas.xlsx` (real embedded formulas)
 
-- **Google Sheets:** open a blank sheet → click cell **A1** → Edit ▸ Paste (Ctrl/Cmd-V). Sheets splits on tabs and treats `=...` cells as live formulas.
-- **Excel:** open a blank workbook → click cell **A1** → paste. (If it lands in one column, use Data ▸ Text to Columns ▸ Delimited ▸ Tab.)
-- Paste target **must be A1** — the relative refs (`B2`, `C2`, …) assume the block starts there.
+Written via **openxlsx** (`writeFormula`), the working token-free Excel backend.
 
-## What you should see (compare the formula cells to these)
+- **Excel / LibreOffice:** just **open the file**. Formulas recalculate on open.
+- **Google Sheets:** New sheet → **File ▸ Import ▸ Upload** `demo-formulas.xlsx` ▸
+  *Replace spreadsheet* (or *Insert new sheet*). The `=...` cells arrive as live
+  formulas and Sheets computes them.
+
+## Artifact 2 — `demo-paste.tsv` (copy-paste route)
+
+- **Google Sheets / Excel:** open a blank sheet → click cell **A1** → paste
+  (Ctrl/Cmd-V). Tab-separated cells split into columns; `=...` cells become live
+  formulas. Paste target **must be A1** — refs (`B2`, `C2`, …) assume the block
+  starts there. (Excel: if it lands in one column, Data ▸ Text to Columns ▸ Tab.)
+
+## What you should see (compare the computed cells to these)
 
 | car | power_to_weight | mpg_vs_avg |
 |---|---|---|
@@ -27,11 +37,12 @@ package (no API, no auth). Paste it and check the numbers match.
 ## Dialect caveats (from `R/dialect.R`)
 
 - **Whole-column aggregates aren't in the built-in dialect.** A bare column symbol
-  translates to the *current row's* cell, so `mean(mpg)` alone can't span the column.
-  The demo teaches it via the public `register_sheet_translator("mean", …)` → an
-  absolute-range `AVERAGE(B$2:B$7)`. The `Average` summary row uses the separate
-  `make_summary_row()` path. Built-ins cover arithmetic (`+ - * / ^`), comparisons
-  (`==`→`=`, `!=`→`<>`), logicals (`&`→`AND`, `|`→`OR`, `!`→`NOT`), `ifelse`→`IF`,
-  and curated math (`abs sqrt round pmin→MIN pmax→MAX is.na→ISBLANK`).
+  translates to the *current row's* cell, so `mean(mpg)` alone can't span the
+  column. The demo teaches it via the public `register_sheet_translator("mean", …)`
+  → an absolute-range `AVERAGE(B$2:B$7)`. The `Average` summary row uses the
+  separate `make_summary_row()` path. Built-ins cover arithmetic (`+ - * / ^`),
+  comparisons (`==`→`=`, `!=`→`<>`), logicals (`&`→`AND`, `|`→`OR`, `!`→`NOT`),
+  `ifelse`→`IF`, and curated math (`abs sqrt round pmin`→`MIN` `pmax`→`MAX`
+  `is.na`→`ISBLANK`).
 - Operands are defensively parenthesized (`=(C2)/(D2)`) — noisy but correct.
-- Regenerate this file anytime: `Rscript verification/make-demo.R`.
+- Regenerate both artifacts anytime: `Rscript verification/make-demo.R`.

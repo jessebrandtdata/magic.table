@@ -16,8 +16,9 @@
 
 suppressMessages(devtools::load_all(quiet = TRUE))
 
-out_dir  <- "verification"
-tsv_path <- file.path(out_dir, "demo-paste.tsv")
+out_dir   <- "verification"
+tsv_path  <- file.path(out_dir, "demo-paste.tsv")
+xlsx_path <- file.path(out_dir, "demo-formulas.xlsx")
 
 # ---- 1. Source data -------------------------------------------------------
 # A small, universally-available dataset. Keep a readable label column so the
@@ -85,6 +86,39 @@ block <- rbind(
 write.table(block, tsv_path, sep = "\t", quote = FALSE,
             row.names = FALSE, col.names = FALSE, na = "")
 
+# ---- 5b. Emit a real .xlsx with the formulas EMBEDDED (openxlsx) ----------
+# The working, token-free Excel backend. openxlsx::writeFormula() writes each
+# "=..." cell as a genuine spreadsheet formula (Excel/Sheets recalculates on
+# open) into a local .xlsx -- no auth, no API. Same grid as the TSV: literal
+# data in A..E, derived formulas in F/G, an AVERAGE summary row on row 8.
+strip_eq <- function(x) sub("^=", "", x)               # openxlsx wants no leading "="
+wb <- openxlsx::createWorkbook()
+openxlsx::addWorksheet(wb, "Demo")
+
+# Literal data block: header row 1 + values rows 2..7, cols A..E.
+openxlsx::writeData(wb, "Demo", x = df, startRow = 1L, startCol = 1L,
+                    colNames = TRUE)
+# Derived-column headers (F, G).
+openxlsx::writeData(
+  wb, "Demo",
+  x = as.data.frame(as.list(names(cells)[6:7]), stringsAsFactors = FALSE),
+  startRow = 1L, startCol = 6L, colNames = FALSE
+)
+# Derived formula columns, rows 2..7.
+openxlsx::writeFormula(wb, "Demo",
+  x = strip_eq(as.character(cells$power_to_weight)), startCol = 6L, startRow = 2L)
+openxlsx::writeFormula(wb, "Demo",
+  x = strip_eq(as.character(cells$mpg_vs_avg)),      startCol = 7L, startRow = 2L)
+# Summary row (row 8): label in A, AVERAGE formulas in B..E.
+summary_col <- c(mpg = 2L, hp = 3L, wt = 4L, cyl = 5L)
+openxlsx::writeData(wb, "Demo", x = "Average", startRow = 8L, startCol = 1L,
+                    colNames = FALSE)
+for (nm in names(summary_col)) {
+  openxlsx::writeFormula(wb, "Demo", x = strip_eq(as.character(summary[[nm]])),
+                         startCol = summary_col[[nm]], startRow = 8L)
+}
+openxlsx::saveWorkbook(wb, xlsx_path, overwrite = TRUE)
+
 # ---- 6. Expected values (eager R evaluation of the same expressions) ------
 mpg_mean <- mean(df$mpg)
 expected <- data.frame(
@@ -94,7 +128,7 @@ expected <- data.frame(
 )
 avg_row <- round(sapply(df[c("mpg", "hp", "wt", "cyl")], mean), 4)
 
-cat("\n==== wrote", tsv_path, "====\n\n")
+cat("\n==== wrote", tsv_path, "and", xlsx_path, "====\n\n")
 cat("Grid that will be pasted (paste target = cell A1):\n\n")
 print(block, right = FALSE)
 cat("\nExpected computed values (evaluate the same expressions in R):\n\n")
