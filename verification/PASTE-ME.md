@@ -45,4 +45,11 @@ Written via **openxlsx** (`writeFormula`), the working token-free Excel backend.
   `ifelse`→`IF`, and curated math (`abs sqrt round pmin`→`MIN` `pmax`→`MAX`
   `is.na`→`ISBLANK`).
 - Operands are defensively parenthesized (`=(C2)/(D2)`) — noisy but correct.
-- Regenerate both artifacts anytime: `Rscript verification/make-demo.R`.
+
+## The narrated walkthrough
+
+`magic-table-demo.qmd` is the runnable, user-facing walkthrough that *generates*
+these two artifacts (and becomes the package vignette after the rename). Render
+the full document with `quarto render verification/magic-table-demo.qmd`
+(needs the package installed), or just regenerate the artifacts with
+`Rscript verification/make-demo.R`.
