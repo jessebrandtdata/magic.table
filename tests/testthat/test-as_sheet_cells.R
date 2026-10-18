@@ -72,23 +72,11 @@ test_that("as_sheet_cells translates a plain overwrite in place", {
   expect_formula_col(cells, "sales", c("=(B2)*(2)", "=(B3)*(2)"))
 })
 
-# ---------------------------------------------------------------------------
-# CHARACTERIZATION TEST — PINS A KNOWN BUG (do not treat as desired behavior).
-#
-# BUG: as_sheet_cells() (R/write_sheet.R) appends a new schema entry for every
-# materialized column using `col_letter(length(schema) + 1L)` as the letter.
-# When an earlier mutate OVERWRITES an existing column, `schema` gains a
-# DUPLICATE entry, so its length no longer equals the column count. Every
-# computed column added afterwards is then assigned a letter that is one-too-far
-# to the right for each prior overwrite, so later formulas that reference those
-# columns point at the WRONG cell (here, `x` references column E, but `margin`
-# actually lives in column D — E is `x` itself, a broken/circular reference).
-#
-# When this is fixed, this test SHOULD fail; update it to assert `=(D2)+(1)`.
-# ---------------------------------------------------------------------------
-test_that("[known bug] overwrite offsets later columns' schema letters", {
+# An overwrite keeps the column's schema entry, so columns computed after it
+# get the letter of the column they physically occupy.
+test_that("an overwrite keeps later columns' schema letters", {
   mt <- magic.table(df) |>
-    dplyr::mutate(sales = sales * 2) |>   # overwrite -> spurious extra schema entry
+    dplyr::mutate(sales = sales * 2) |>   # overwrite of an existing column
     dplyr::mutate(margin = sales - cost) |>
     dplyr::mutate(x = margin + 1)         # references margin (physically column D)
 
@@ -97,6 +85,17 @@ test_that("[known bug] overwrite offsets later columns' schema letters", {
   # margin is physically column D:
   expect_equal(match("margin", names(cells)), 4L)
   expect_equal(col_letter(4L), "D")
-  # ...but `x` mis-references it as column E (the CORRECT value would be D):
-  expect_formula_col(cells, "x", c("=(E2)+(1)", "=(E3)+(1)"))
+  expect_formula_col(cells, "x", c("=(D2)+(1)", "=(D3)+(1)"))
+})
+
+test_that("repeated overwrites of a computed column keep its letter", {
+  mt <- magic.table(df) |>
+    dplyr::mutate(margin = sales - cost) |>
+    dplyr::mutate(margin = margin * 2) |>
+    dplyr::mutate(sales = sales + 1) |>
+    dplyr::mutate(y = margin + cost)
+
+  cells <- as_sheet_cells(mt, start_row = 1L)
+  expect_equal(names(cells), c("region", "sales", "cost", "margin", "y"))
+  expect_formula_col(cells, "y", c("=(D2)+(C2)", "=(D3)+(C3)"))
 })
