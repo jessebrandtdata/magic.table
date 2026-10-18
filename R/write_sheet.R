@@ -49,8 +49,10 @@ as_sheet_cells <- function(x, start_row = 1L) {
         paste0("=", walk_expr(expr, schema, row_n = r))
       }, character(1))
       data[[nm]] <- googlesheets4::gs4_formula(formulas)
-      schema <- c(schema,
-                  stats::setNames(col_letter(length(schema) + 1L), nm))
+      if (!nm %in% names(schema)) {
+        schema <- c(schema,
+                    stats::setNames(col_letter(length(schema) + 1L), nm))
+      }
     }
   }
   tibble::as_tibble(data)
