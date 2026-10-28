@@ -8,8 +8,8 @@
 # rendered HTML. For the full rendered walkthrough instead, use:
 #     quarto render verification/magic-table-demo.qmd
 #
-# (The .qmd's `library(GsheetGenie)` becomes `library(magic.table)` after the
-# public rename; here we load the in-development package with devtools.)
+# (The .qmd calls `library(magic.table)`; here we load the in-development
+# package with devtools instead.)
 
 suppressMessages(devtools::load_all(quiet = TRUE))
 
