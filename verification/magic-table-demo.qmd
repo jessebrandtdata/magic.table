@@ -29,16 +29,12 @@ Google account, no auth, no token.
 ```{r}
 #| eval: false
 #| purl: false
-# The public package:
 remotes::install_github("jessebrandtdata/magic.table")
-
-# Until the rename lands, install the same code under its current name/branch:
-# remotes::install_github("jessebrandtdata/GsheetGenie@thread/GsheetGenie2")
 ```
 
 ```{r}
 #| label: library
-library(GsheetGenie)   # becomes `library(magic.table)` after the rename
+library(magic.table)
 library(dplyr)
 ```
 

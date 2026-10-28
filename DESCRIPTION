@@ -1,5 +1,5 @@
-Package: GsheetGenie
-Title: Build Analytical Google Sheets from R
+Package: magic.table
+Title: Turn an R Data Frame into a Live-Formula Table
 Version: 0.0.0.9000
 Authors@R:
     person("Jesse", "Brandt", , "jesse.a.brandt@gmail.com", role = c("aut", "cre"))
@@ -17,6 +17,7 @@ Roxygen: list(markdown = TRUE)
 Depends:
     R (>= 4.1.0)
 Imports:
+    lifecycle,
     dplyr,
     googlesheets4,
     rlang,
@@ -27,6 +28,6 @@ Suggests:
     rmarkdown
 Config/testthat/edition: 3
 VignetteBuilder: knitr
-URL: https://github.com/jessebrandtdata/GsheetGenie
-BugReports: https://github.com/jessebrandtdata/GsheetGenie/issues
+URL: https://github.com/jessebrandtdata/magic.table
+BugReports: https://github.com/jessebrandtdata/magic.table/issues
 Config/roxygen2/version: 8.0.0

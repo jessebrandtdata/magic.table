@@ -1,8 +1,12 @@
-# GsheetGenie
+# magic.table
+
+<!-- badges: start -->
+[![Lifecycle: experimental](https://img.shields.io/badge/lifecycle-experimental-orange.svg)](https://lifecycle.r-lib.org/articles/stages.html#experimental)
+<!-- badges: end -->
 
 > Turn an R data frame into a live-formula table.
 
-GsheetGenie builds external tables whose derived columns are **live formulas**
+magic.table builds external tables whose derived columns are **live formulas**
 rather than pre-computed values, via
 [googlesheets4](https://googlesheets4.tidyverse.org/). It focuses on the
 formula-and-layout logic — no formatting or styling features.
@@ -11,7 +15,7 @@ formula-and-layout logic — no formatting or styling features.
 
 ```r
 # install.packages("pak")
-pak::pak("jessebrandtdata/GsheetGenie")
+pak::pak("jessebrandtdata/magic.table")
 ```
 
 ## The magic.table
@@ -23,7 +27,7 @@ evaluating it, and the result is exported as live formulas to an external table
 roadmap).
 
 ```r
-library(GsheetGenie)
+library(magic.table)
 library(dplyr)
 
 ss <- googlesheets4::gs4_create("Q1 sales")
@@ -44,7 +48,7 @@ Preview the cells that *would* be written — no auth, no network — with
 The original helper writes a data table flanked by live-formula summary rows:
 
 ```r
-library(GsheetGenie)
+library(magic.table)
 library(googlesheets4)
 
 ss <- gs4_create("Q1 sales analysis")
