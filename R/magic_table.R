@@ -4,7 +4,7 @@
 #' (S3 class `magic.table`, mirroring `data.frame`). Once a data frame is a
 #' `magic.table`, operations on it — currently [mutate()][dplyr::mutate] — are
 #' *recorded* rather than evaluated in R, so they can be **exported as live
-#' formulas** to an external table (Google Sheets today; other backends later)
+#' formulas** to an external table (an Excel workbook or a Google Sheet)
 #' instead of collapsing to static values.
 #'
 #' A `magic.table` is designed around two ideas:
@@ -15,11 +15,12 @@
 #'     the table knows the provenance of each derived column rather than only
 #'     its values.}
 #'   \item{Optional synced external table}{A `magic.table` may be bound to an
-#'     external table — a Google Sheet, and in future an Excel file, on-disk
+#'     external table — an Excel workbook or a Google Sheet, and in future an on-disk
 #'     table, or database — that it can write to and, eventually, reconcile
 #'     against when edited externally. The binding (`backend`) is just a small
 #'     piece of data carried on the object; it is `NULL` until the table is
-#'     synced. Google Sheets is the first backend (see [write_sheet()]).}
+#'     synced. Two backends exist: Excel (see [write_excel()]) and Google
+#'     Sheets (see [write_sheet()]).}
 #' }
 #'
 #' @param df A data frame.
@@ -79,7 +80,18 @@ print.magic.table <- function(x, ...) {
       "  ", length(x$ops), " recorded op", if (length(x$ops) != 1L) "s" else "",
       "\n",
       "  backend: ", if (is.null(x$backend)) "none (not synced)" else
-        format(x$backend), "\n",
+        .format_backend(x$backend), "\n",
       sep = "")
   invisible(x)
+}
+
+# One line naming a bound backend: its type, target and sheet. The snapshot
+# used for no-clobber reconciliation is deliberately not shown.
+.format_backend <- function(be) {
+  target <- switch(be$type,
+    excel  = be$path,
+    gsheet = if (is.character(be$ss)) be$ss else paste0("<", class(be$ss)[1], ">"),
+    "?"
+  )
+  paste0(be$type, " ", target, " (sheet ", be$sheet, ", row ", be$start_row, ")")
 }
