@@ -1,9 +1,9 @@
 # GsheetGenie
 
-> Build analytical Google Sheets from R.
+> Turn an R data frame into a live-formula table.
 
-GsheetGenie writes data tables surrounded by live-formula summary rows
-(sums, means, etc.) to Google Sheets via
+GsheetGenie builds external tables whose derived columns are **live formulas**
+rather than pre-computed values, via
 [googlesheets4](https://googlesheets4.tidyverse.org/). It focuses on the
 formula-and-layout logic — no formatting or styling features.
 
@@ -11,10 +11,37 @@ formula-and-layout logic — no formatting or styling features.
 
 ```r
 # install.packages("pak")
-pak::pak("jesseabrandt/GsheetGenie")
+pak::pak("jessebrandtdata/GsheetGenie")
 ```
 
-## Usage
+## The magic.table
+
+`magic.table()` wraps a data frame in a **recorded-computation table**: a lazy
+`dplyr::mutate()` records each tidy expression as column provenance instead of
+evaluating it, and the result is exported as live formulas to an external table
+(Google Sheets today; other backends and reconciling external edits are on the
+roadmap).
+
+```r
+library(GsheetGenie)
+library(dplyr)
+
+ss <- googlesheets4::gs4_create("Q1 sales")
+
+tibble::tibble(region = c("E", "W"), sales = c(120, 80), cost = c(40, 30)) |>
+  magic.table() |>
+  mutate(margin     = sales - cost,     # -> =(B2)-(C2), …
+         margin_pct = margin / sales) |># -> =(D2)/(B2), …
+  write_sheet(ss, sheet = "Sales", start_row = 1)
+```
+
+Preview the cells that *would* be written — no auth, no network — with
+`as_sheet_cells()`. Extend the R→Sheets dialect with
+`register_sheet_translator()`.
+
+## Eager summary tables
+
+The original helper writes a data table flanked by live-formula summary rows:
 
 ```r
 library(GsheetGenie)

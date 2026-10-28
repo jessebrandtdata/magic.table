@@ -1,0 +1,228 @@
+---
+title: "magic.table: record computations, export real spreadsheet formulas"
+format: html
+vignette: >
+  %\VignetteIndexEntry{Getting started with magic.table}
+  %\VignetteEngine{quarto::html}
+  %\VignetteEncoding{UTF-8}
+---
+
+```{r}
+#| label: setup
+#| include: false
+knitr::opts_chunk$set(collapse = TRUE, comment = "#>")
+```
+
+**magic.table** wraps an ordinary data frame so that the columns you *derive* from
+it aren't computed and thrown away — they're **recorded as the expressions that
+produced them**. You can then export the table to a spreadsheet where those
+derived columns land as **live formulas**, not pasted-in numbers. Edit a source
+cell in the sheet and the derived cells recompute, because they really are
+`=`-formulas.
+
+This walkthrough builds a small table, records two derived columns, inspects
+their provenance, and writes two spreadsheet artifacts you can open or paste — no
+Google account, no auth, no token.
+
+## Install
+
+```{r}
+#| eval: false
+#| purl: false
+# The public package:
+remotes::install_github("jessebrandtdata/magic.table")
+
+# Until the rename lands, install the same code under its current name/branch:
+# remotes::install_github("jessebrandtdata/GsheetGenie@thread/GsheetGenie2")
+```
+
+```{r}
+#| label: library
+library(GsheetGenie)   # becomes `library(magic.table)` after the rename
+library(dplyr)
+```
+
+## Start with a plain data frame
+
+Any data frame will do. We take the first six cars from `mtcars`, keeping a
+readable label column and a few numeric columns to compute on.
+
+```{r}
+#| label: data
+cars <- head(mtcars, 6)
+df <- data.frame(
+  car = rownames(cars),
+  mpg = cars$mpg,
+  hp  = cars$hp,
+  wt  = cars$wt,
+  cyl = cars$cyl
+)
+df
+```
+
+## Make it a magic.table
+
+`magic.table()` wraps the data frame. Nothing about your data changes — you've
+just switched on *recording*.
+
+```{r}
+#| label: wrap
+mt <- magic.table(df)
+mt
+```
+
+## Record derived columns with `mutate()`
+
+Here's the twist: `mutate()` on a magic.table does **not** compute. It *records*
+each expression. `power_to_weight` is plain arithmetic across two columns;
+`mpg_vs_avg` is a ratio against the column mean (more on that aggregate below).
+
+```{r}
+#| label: mutate
+mt <- mt |>
+  mutate(
+    power_to_weight = hp / wt,
+    mpg_vs_avg      = mpg / mean(mpg)
+  )
+mt
+```
+
+Notice the printout still reports the two recorded ops — the values haven't been
+materialized yet.
+
+## See the provenance
+
+`provenance()` is what "recorded computation" buys you: for every column it tells
+you whether it's an original `source` column or one `computed` from an
+expression — and hands you that expression back. This is derived on demand; no
+extra state is stored.
+
+```{r}
+#| label: provenance
+provenance(mt)
+```
+
+## Teach the dialect a new function
+
+The built-in translator turns a bare column reference into the **current row's**
+cell (`mpg` → `B2` on row 2), so on its own it can't express an aggregate over a
+whole column. `register_sheet_translator()` is the extension point: we teach it
+that `mean(col)` should become an absolute-range `AVERAGE`.
+
+```{r}
+#| label: translator
+start_row      <- 1L                       # header row
+data_first_row <- start_row + 1L           # first data row
+data_last_row  <- data_first_row + nrow(df) - 1L
+
+register_sheet_translator("mean", function(args, ctx) {
+  col <- sub("[0-9]+$", "", args[[1]])     # "B2" -> "B"
+  sprintf("AVERAGE(%s$%d:%s$%d)", col, data_first_row, col, data_last_row)
+})
+```
+
+## Materialize the A1 formula grid
+
+`as_sheet_cells()` walks the recorded ops and produces exactly what would be
+written to a sheet — original columns keep their values, derived columns become
+`=`-formulas anchored at `start_row`. No network, no auth.
+
+```{r}
+#| label: cells
+cells <- as_sheet_cells(mt, start_row = start_row)
+cells
+```
+
+A live-formula summary row (column averages) is built the same way, via
+`make_summary_row()`:
+
+```{r}
+#| label: summary
+summary <- make_summary_row(
+  df,
+  data_start_row = data_first_row,
+  label          = "Average",
+  fn             = "AVERAGE"
+)
+summary
+```
+
+## Write the two spreadsheet artifacts
+
+### `demo-formulas.xlsx` — real embedded formulas (openxlsx)
+
+The working, token-free export backend: `openxlsx::writeFormula()` embeds each
+`=`-formula into a local `.xlsx` that Excel (or Google Sheets, via import)
+recalculates on open.
+
+```{r}
+#| label: xlsx
+strip_eq <- function(x) sub("^=", "", x)       # openxlsx wants no leading "="
+
+wb <- openxlsx::createWorkbook()
+openxlsx::addWorksheet(wb, "Demo")
+
+# Literal data: header row 1 + values rows 2..7, columns A..E.
+openxlsx::writeData(wb, "Demo", df, startRow = 1L, startCol = 1L, colNames = TRUE)
+# Derived-column headers (F, G) + their formulas down rows 2..7.
+openxlsx::writeData(
+  wb, "Demo",
+  as.data.frame(as.list(names(cells)[6:7]), stringsAsFactors = FALSE),
+  startRow = 1L, startCol = 6L, colNames = FALSE
+)
+openxlsx::writeFormula(wb, "Demo", strip_eq(as.character(cells$power_to_weight)),
+                       startCol = 6L, startRow = 2L)
+openxlsx::writeFormula(wb, "Demo", strip_eq(as.character(cells$mpg_vs_avg)),
+                       startCol = 7L, startRow = 2L)
+# Summary row (row 8): label in A, AVERAGE formulas in B..E.
+openxlsx::writeData(wb, "Demo", "Average", startRow = 8L, startCol = 1L,
+                    colNames = FALSE)
+summary_col <- c(mpg = 2L, hp = 3L, wt = 4L, cyl = 5L)
+for (nm in names(summary_col)) {
+  openxlsx::writeFormula(wb, "Demo", strip_eq(as.character(summary[[nm]])),
+                         startCol = summary_col[[nm]], startRow = 8L)
+}
+openxlsx::saveWorkbook(wb, "demo-formulas.xlsx", overwrite = TRUE)
+```
+
+### `demo-paste.tsv` — copy-paste route
+
+The same grid as tab-separated text, formula cells as literal `=...` strings, so
+you can paste it straight into a sheet.
+
+```{r}
+#| label: tsv
+stringify   <- function(x) vapply(x, as.character, character(1))
+grid        <- as.data.frame(lapply(cells, stringify), stringsAsFactors = FALSE)
+summary_row <- stats::setNames(rep("", ncol(cells)), names(cells))
+for (nm in names(summary)) summary_row[[nm]] <- as.character(summary[[nm]])
+
+block <- rbind(stats::setNames(as.list(names(cells)), names(cells)), grid, summary_row)
+write.table(block, "demo-paste.tsv", sep = "\t", quote = FALSE,
+            row.names = FALSE, col.names = FALSE, na = "")
+```
+
+## Now open it / paste it
+
+- **Excel / LibreOffice:** open `demo-formulas.xlsx`. Formulas recalculate on open.
+- **Google Sheets (import):** New sheet → *File ▸ Import ▸ Upload* `demo-formulas.xlsx`.
+- **Google Sheets / Excel (paste):** open a blank sheet, click cell **A1**, paste
+  `demo-paste.tsv`. The paste target **must be A1** so the relative references
+  (`B2`, `C2`, …) line up.
+
+The derived cells should evaluate to these (computed eagerly in R for comparison):
+
+```{r}
+#| label: expected
+expected <- data.frame(
+  car             = df$car,
+  power_to_weight = round(df$hp / df$wt, 4),
+  mpg_vs_avg      = round(df$mpg / mean(df$mpg), 4)
+)
+expected
+
+round(sapply(df[c("mpg", "hp", "wt", "cyl")], mean), 4)  # the "Average" row
+```
+
+If those match what the sheet shows, the offline translation is faithful — and
+every derived cell is a live formula, so editing a source number recomputes it.
