@@ -22,9 +22,8 @@ pak::pak("jessebrandtdata/magic.table")
 
 `magic.table()` wraps a data frame in a **recorded-computation table**: a lazy
 `dplyr::mutate()` records each tidy expression as column provenance instead of
-evaluating it, and the result is exported as live formulas to an external table
-(Google Sheets today; other backends and reconciling external edits are on the
-roadmap).
+evaluating it, and the result is exported as live formulas to an external table:
+an Excel workbook or a Google Sheet today.
 
 ```r
 library(magic.table)
@@ -39,8 +38,23 @@ tibble::tibble(region = c("E", "W"), sales = c(120, 80), cost = c(40, 30)) |>
   write_sheet(ss, sheet = "Sales", start_row = 1)
 ```
 
+The same table goes to an `.xlsx` file with no account and no token; Excel
+recalculates the formulas on open, and Google Sheets imports the file with
+them intact:
+
+```r
+mt <- tibble::tibble(region = c("E", "W"), sales = c(120, 80), cost = c(40, 30)) |>
+  magic.table() |>
+  mutate(margin = sales - cost) |>
+  write_excel("q1-sales.xlsx", sheet = "Sales")
+```
+
+Both writers hand back the magic.table **bound** to its target. A later write to
+the same target is refused with a warning if the sheet or file changed in the
+meantime; pass `overwrite = TRUE` to write anyway.
+
 Preview the cells that *would* be written — no auth, no network — with
-`as_sheet_cells()`. Extend the R→Sheets dialect with
+`as_sheet_cells()`. Extend the R→spreadsheet dialect with
 `register_sheet_translator()`.
 
 ## Eager summary tables

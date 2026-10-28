@@ -9,6 +9,7 @@ reference:
   - as.magic.table
   - provenance
   - write_sheet
+  - write_excel
   - as_sheet_cells
 - title: Extending the Sheets dialect
   contents:

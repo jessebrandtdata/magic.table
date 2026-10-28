@@ -145,38 +145,34 @@ summary
 
 ## Write the two spreadsheet artifacts
 
-### `demo-formulas.xlsx` — real embedded formulas (openxlsx)
+### `demo-formulas.xlsx` — real embedded formulas
 
-The working, token-free export backend: `openxlsx::writeFormula()` embeds each
-`=`-formula into a local `.xlsx` that Excel (or Google Sheets, via import)
-recalculates on open.
+`write_excel()` is the token-free export backend: it writes the same cells as
+above into a local `.xlsx`, derived columns as real `=`-formulas, which Excel
+(or Google Sheets, via import) recalculates on open. The returned magic.table
+remembers the file it is bound to.
 
 ```{r}
 #| label: xlsx
+mt <- write_excel(mt, "demo-formulas.xlsx", sheet = "Demo", start_row = start_row)
+mt
+```
+
+The summary row is a separate one-row tibble, so it is appended by hand with
+openxlsx (row 8: label in A, `AVERAGE` formulas in B..E):
+
+```{r}
+#| label: xlsx-summary
 strip_eq <- function(x) sub("^=", "", x)       # openxlsx wants no leading "="
 
-wb <- openxlsx::createWorkbook()
-openxlsx::addWorksheet(wb, "Demo")
-
-# Literal data: header row 1 + values rows 2..7, columns A..E.
-openxlsx::writeData(wb, "Demo", df, startRow = 1L, startCol = 1L, colNames = TRUE)
-# Derived-column headers (F, G) + their formulas down rows 2..7.
-openxlsx::writeData(
-  wb, "Demo",
-  as.data.frame(as.list(names(cells)[6:7]), stringsAsFactors = FALSE),
-  startRow = 1L, startCol = 6L, colNames = FALSE
-)
-openxlsx::writeFormula(wb, "Demo", strip_eq(as.character(cells$power_to_weight)),
-                       startCol = 6L, startRow = 2L)
-openxlsx::writeFormula(wb, "Demo", strip_eq(as.character(cells$mpg_vs_avg)),
-                       startCol = 7L, startRow = 2L)
-# Summary row (row 8): label in A, AVERAGE formulas in B..E.
-openxlsx::writeData(wb, "Demo", "Average", startRow = 8L, startCol = 1L,
+wb <- openxlsx::loadWorkbook("demo-formulas.xlsx")
+summary_row <- data_last_row + 1L
+openxlsx::writeData(wb, "Demo", "Average", startRow = summary_row, startCol = 1L,
                     colNames = FALSE)
 summary_col <- c(mpg = 2L, hp = 3L, wt = 4L, cyl = 5L)
 for (nm in names(summary_col)) {
   openxlsx::writeFormula(wb, "Demo", strip_eq(as.character(summary[[nm]])),
-                         startCol = summary_col[[nm]], startRow = 8L)
+                         startCol = summary_col[[nm]], startRow = summary_row)
 }
 openxlsx::saveWorkbook(wb, "demo-formulas.xlsx", overwrite = TRUE)
 ```
