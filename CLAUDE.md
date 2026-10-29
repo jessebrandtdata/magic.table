@@ -75,7 +75,8 @@ I/O, and the Excel tests read formulas back out of the saved workbook.
 `Rscript -e 'devtools::test()'` on the host. `./check` is the exo-watch gate:
 it runs the full suite when the package's dependencies are installed, and
 otherwise runs only `test-identity.R` (base R + testthat) and names what it
-skipped. Which fbox profile the gate runs in is exo's data, not this repo's: exo's
+skipped; with no R in the box at all it skips everything, says so, and exits 0
+(a skip by substrate, never a red for a wrong box). Which fbox profile the gate runs in is exo's data, not this repo's: exo's
 `repo-profiles.tsv` maps this repo to `claude-r`, and no `.exo-profile` ships here.
 
 `tests/testthat/test-identity.R` fails on the maintainer's name anywhere in
