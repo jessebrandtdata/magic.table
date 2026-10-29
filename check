@@ -1,6 +1,6 @@
 #!/bin/sh
 # check — magic.table's merge gate. exo-watch clones the PR head into a clean
-# box (profile .exo-profile = claude-r: R, testthat, devtools, no network) and
+# box (the fbox profile exo maps this repo to: R, testthat, devtools, no network) and
 # runs this script; exit 0 is green.
 #
 # The box cannot install the package's runtime dependencies, so the gate
