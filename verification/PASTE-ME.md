@@ -7,7 +7,7 @@ this package (no API, no auth, no token). Two artifacts, three ways to check.
 
 ## Artifact 1 — `demo-formulas.xlsx` (real embedded formulas)
 
-Written via **openxlsx** (`writeFormula`), the working token-free Excel backend.
+Written by `write_excel()`, the token-free Excel backend (openxlsx underneath).
 
 - **Excel / LibreOffice:** just **open the file**. Formulas recalculate on open.
 - **Google Sheets:** New sheet → **File ▸ Import ▸ Upload** `demo-formulas.xlsx` ▸
@@ -49,7 +49,7 @@ Written via **openxlsx** (`writeFormula`), the working token-free Excel backend.
 ## The narrated walkthrough
 
 `magic-table-demo.qmd` is the runnable, user-facing walkthrough that *generates*
-these two artifacts (and becomes the package vignette after the rename). Render
+these two artifacts. Render
 the full document with `quarto render verification/magic-table-demo.qmd`
 (needs the package installed), or just regenerate the artifacts with
 `Rscript verification/make-demo.R`.
