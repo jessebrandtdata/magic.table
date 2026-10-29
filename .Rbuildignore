@@ -10,7 +10,9 @@
 ^CRAN-RELEASE$
 ^CRAN-SUBMISSION$
 ^\.mcp\.json$
-^DECISIONS\.md$
 ^north_star\.md$
 ^verification$
 ^\.git$
+^CLAUDE\.md$
+^check$
+^\.exo-profile$
