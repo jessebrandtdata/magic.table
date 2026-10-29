@@ -15,82 +15,15 @@ knitr::opts_chunk$set(
 )
 ```
 
-## The headline workflow
+## The magic.table: a recorded-computation table
 
-```{r}
-library(magic.table)
-library(googlesheets4)
+A `magic.table` wraps a data frame so that `dplyr::mutate()` *records* each
+expression as column provenance instead of computing it. The recorded columns
+are then **exported as live formulas** to an external table, an Excel workbook
+or a Google Sheet. Editing a source cell in the spreadsheet recomputes the
+derived columns, because they are real formulas, not pasted values.
 
-ss <- gs4_create("Q1 sales analysis")
-
-write_analytical_table(
-  ss,
-  sales_q1,
-  sheet     = "Sales",
-  title     = "Q1 Sales by Region",
-  summaries = c(Total = "SUM", Average = "AVERAGE")
-)
-```
-
-The resulting sheet:
-
-| Row | Content                              |
-| --- | ------------------------------------ |
-| 1   | Title row                            |
-| 2   | (blank)                              |
-| 3   | Column headers                       |
-| 4–N | Data                                 |
-| N+1 | First summary row                    |
-| N+2 | Second summary row                   |
-
-## Restricting which columns get summarized
-
-By default, summaries apply to every numeric column. Pass `cols` to restrict:
-
-```{r}
-write_analytical_table(
-  ss,
-  sales_q1,
-  sheet     = "Sales",
-  title     = "Q1 Sales by Region",
-  summaries = c(Total = "SUM"),
-  cols      = c("revenue", "units")
-)
-```
-
-## Composing your own layouts
-
-For non-standard layouts, drop down a level. `make_summary_row()` returns a
-one-row tibble whose numeric columns are `gs4_formula()`-wrapped strings — ready
-for `googlesheets4::sheet_append()`.
-
-```{r}
-sheet_write(sales_q1, ss, sheet = "Sales")
-
-totals <- make_summary_row(
-  sales_q1,
-  data_start_row = 2,
-  label          = "Total",
-  fn             = "SUM"
-)
-
-sheet_append(ss, totals, sheet = "Sales")
-```
-
-`col_letter()` converts a 1-based column index to its A1 letter
-(`col_letter(28)` returns `"AB"`) if you need to assemble formulas by hand.
-
-## The magic.table: recorded-computation tables
-
-The helpers above compute summaries eagerly in R. A `magic.table` goes further:
-it wraps a data frame so that `dplyr::mutate()` *records* each expression as
-column provenance instead of computing it. Those recorded computations are then
-**exported as live formulas** to an external table — Google Sheets today (other
-backends, and reconciling external edits, are on the roadmap). Editing a source
-cell in Sheets recomputes the derived columns, because they are real formulas,
-not pasted values.
-
-```{r magic-table}
+```{r magic-table, eval = TRUE}
 library(magic.table)
 library(dplyr)
 
@@ -100,86 +33,130 @@ df <- tibble::tibble(
   cost   = c( 40, 30, 20)
 )
 
-df |>
+mt <- df |>
   magic.table() |>
   mutate(margin     = sales - cost,
-         margin_pct = margin / sales) |>
-  write_sheet(ss, sheet = "Sales", start_row = 3)
+         margin_pct = margin / sales)
+mt
 ```
 
-The `margin` column ends up holding `=(B4)-(C4)`, `=(B5)-(C5)`, … and
-`margin_pct` holds `=(D4)/(B4)`, … .
+Nothing has been computed: the printout counts one recorded op.
 
 ### Inspecting column provenance
 
-A `magic.table` remembers how each column came to be. `provenance()` reports,
-per column, whether it is an original `source` column or one `computed` by a
-recorded `mutate()`, and the expression that defines it — derived on demand, no
-auth needed:
+`provenance()` reports, per column, whether it is an original `source` column
+or one `computed` by a recorded `mutate()`, and the expression that defines
+it. It is derived on demand from the recorded ops.
 
 ```{r provenance, eval = TRUE}
-library(magic.table)
-library(dplyr)
-
-tibble::tibble(sales = c(120, 80), cost = c(40, 30)) |>
-  magic.table() |>
-  mutate(margin = sales - cost,
-         margin_pct = margin / sales) |>
-  provenance()
+provenance(mt)
 ```
 
-### Previewing without auth
+### Previewing the formulas without writing anything
 
-`as_sheet_cells()` returns exactly what `write_sheet()` *would* push, without
-contacting Google — handy for sanity-checking formulas (and the testability
-lever for the whole package):
+`as_sheet_cells()` returns exactly the grid a writer would push: original
+columns keep their values, computed columns become `=`-formulas anchored at
+`start_row` (the header row). No file, no network.
 
 ```{r preview, eval = TRUE}
-library(magic.table)
-library(dplyr)
-
-tibble::tibble(sales = c(120, 80), cost = c(40, 30)) |>
-  magic.table() |>
-  mutate(margin = sales - cost,
-         margin_pct = margin / sales) |>
-  as_sheet_cells(start_row = 3)
+as_sheet_cells(mt, start_row = 1)
 ```
 
-### Extending the translator
+## Export to Excel
+
+`write_excel()` writes the grid to a sheet of a local `.xlsx`, computed columns
+as real formulas. No account and no token: Excel and LibreOffice recalculate
+on open, and Google Sheets imports the file with the formulas intact.
+
+```{r excel, eval = TRUE}
+path <- tempfile(fileext = ".xlsx")
+mt <- write_excel(mt, path, sheet = "Sales")
+mt
+```
+
+The returned magic.table is **bound** to the file (see the `backend` line), so
+capture it to keep the connection. An existing workbook keeps its other
+sheets, and a re-written sheet keeps its position among them.
+
+## Export to Google Sheets
+
+`write_sheet()` is the same step against a Google Sheet, through
+[googlesheets4](https://googlesheets4.tidyverse.org/):
+
+```{r sheets}
+library(googlesheets4)
+ss <- gs4_create("Q1 sales")
+
+mt <- write_sheet(mt, ss, sheet = "Sales", start_row = 1)
+```
+
+The `margin` column ends up holding `=(B2)-(C2)`, `=(B3)-(C3)`, … and
+`margin_pct` holds `=(D2)/(B2)`, ….
+
+## Re-writing, and the no-clobber default
+
+Both writers follow one contract. A write to a *new* target just writes. A
+re-write to the **same** target first compares the live state (the sheet's
+cells, or the file on disk) against the snapshot taken at the previous write.
+If someone changed it in the meantime, the write is **refused with a warning**
+rather than silently overwriting their edit:
+
+```{r reconcile}
+mt <- mt |>
+  mutate(margin_share = margin / 200) |>
+  write_excel(path, sheet = "Sales")
+#> Warning: The target workbook has changed since magic.table last wrote it;
+#> not overwriting. Pass `overwrite = TRUE` to write anyway.
+
+# write anyway:
+mt <- write_excel(mt, path, sheet = "Sales", overwrite = TRUE)
+```
+
+## Extending the translator
 
 The default dialect covers arithmetic, comparisons, logical operators,
-`ifelse`, and a small set of math/predicate functions (`abs`, `round`,
-`sqrt`, `pmin`, `pmax`, `is.na`). Anything else errors with a hint pointing
-at `register_sheet_translator()`:
+`ifelse`, and a small set of math and predicate functions (`abs`, `round`,
+`sqrt`, `pmin`, `pmax`, `is.na`). A bare column name becomes the current
+row's cell, so whole-column aggregates are not built in. Anything else errors
+with a hint pointing at `register_sheet_translator()`, which takes the already
+translated arguments and returns a formula fragment:
 
 ```{r register}
 register_sheet_translator("paste0", function(args, ctx) {
   paste(args, collapse = "&")
 })
+
+# a column-wide mean over data rows 2..4 (the header is row 1)
+register_sheet_translator("mean", function(args, ctx) {
+  col <- sub("[0-9]+$", "", args[[1]])
+  sprintf("AVERAGE(%s$2:%s$4)", col, col)
+})
 ```
 
-### Syncing and no-clobber reconciliation
+## Eager summary tables
 
-`write_sheet()` returns the `magic.table` with a **bound backend** — the
-connection (`ss` / `sheet` / `start_row`) plus a snapshot of what was written.
-Capture it to keep that connection:
+The original helpers compute nothing lazily; they write a data block flanked
+by live-formula summary rows (sums, means, …) to a Google Sheet:
 
-```{r sync, eval = FALSE}
-mt <- df |>
-  magic.table() |>
-  mutate(margin = sales - cost) |>
-  write_sheet(ss, sheet = "Sales", start_row = 3)
+```{r analytical}
+write_analytical_table(
+  ss,
+  df,
+  sheet     = "Summary",
+  title     = "Q1 Sales by Region",
+  summaries = c(Total = "SUM", Average = "AVERAGE")
+)
 ```
 
-On a re-write to the same target, magic.table first polls the sheet and compares
-it against that snapshot. If someone edited the sheet in the meantime, the write
-is **refused with a warning** rather than silently clobbering their edit:
+The sheet ends up laid out as: title in row 1, a blank row, headers in row 3,
+the data, then one `=SUM(...)` / `=AVERAGE(...)` row per summary. By default
+every numeric column is summarized; pass `cols` to restrict.
 
-```{r reconcile, eval = FALSE}
-mt <- write_sheet(mt, ss, sheet = "Sales", start_row = 3)
-#> Warning: The target sheet has changed since magic.table last wrote it;
-#> not overwriting. Pass `overwrite = TRUE` to write anyway.
+For other layouts, drop a level: `make_summary_row()` returns the one-row
+tibble of formulas and you place it yourself, and `col_letter()` turns a
+column index into its A1 letter (`col_letter(28)` is `"AB"`).
 
-# write anyway:
-mt <- write_sheet(mt, ss, sheet = "Sales", start_row = 3, overwrite = TRUE)
+```{r compose}
+totals <- make_summary_row(df, data_start_row = 2, label = "Total", fn = "SUM")
+sheet_append(ss, totals, sheet = "Sales")
 ```

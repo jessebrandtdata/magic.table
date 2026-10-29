@@ -1,0 +1,35 @@
+#!/bin/sh
+# check — magic.table's merge gate. exo-watch clones the PR head into a clean
+# box (profile .exo-profile = claude-r: R, testthat, devtools, no network) and
+# runs this script; exit 0 is green.
+#
+# The box cannot install the package's runtime dependencies, so the gate
+# names its substrate before the dots start: with every Import present it
+# runs the full testthat suite; without them it runs only the identity test
+# (base R + testthat) and prints a SKIP line naming the missing packages.
+# The full suite then runs on the host with `Rscript -e 'devtools::test()'`.
+set -e
+cd "$(dirname "$0")"
+
+missing=$(Rscript -e '
+  need <- c("dplyr", "googlesheets4", "lifecycle", "openxlsx", "rlang",
+            "tibble", "testthat", "withr", "devtools")
+  have <- vapply(need, requireNamespace, logical(1), quietly = TRUE)
+  cat(need[!have])
+')
+
+if [ -z "$missing" ]; then
+  echo "substrate: full suite"
+  Rscript -e 'devtools::test(stop_on_failure = TRUE)'
+else
+  echo "SKIP full suite: missing R packages: $missing"
+  echo "substrate: identity test only"
+  Rscript -e '
+    r <- testthat::test_file("tests/testthat/test-identity.R",
+                             reporter = "summary")
+    df <- as.data.frame(r)
+    if (sum(df$failed) > 0 || sum(df$error) > 0) quit(status = 1)
+  '
+fi
+
+echo "check ok"
