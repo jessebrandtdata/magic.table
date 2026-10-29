@@ -17,7 +17,7 @@ An object of class \code{c("magic.table", "tbl")}.
 (S3 class \code{magic.table}, mirroring \code{data.frame}). Once a data frame is a
 \code{magic.table}, operations on it — currently \link[dplyr:mutate]{mutate()} — are
 \emph{recorded} rather than evaluated in R, so they can be \strong{exported as live
-formulas} to an external table (Google Sheets today; other backends later)
+formulas} to an external table (an Excel workbook or a Google Sheet)
 instead of collapsing to static values.
 }
 \details{
@@ -29,11 +29,12 @@ is stored as the unevaluated expression that produced it (in \code{ops}), so
 the table knows the provenance of each derived column rather than only
 its values.}
 \item{Optional synced external table}{A \code{magic.table} may be bound to an
-external table — a Google Sheet, and in future an Excel file, on-disk
+external table — an Excel workbook or a Google Sheet, and in future an on-disk
 table, or database — that it can write to and, eventually, reconcile
 against when edited externally. The binding (\code{backend}) is just a small
 piece of data carried on the object; it is \code{NULL} until the table is
-synced. Google Sheets is the first backend (see \code{\link[=write_sheet]{write_sheet()}}).}
+synced. Two backends exist: Excel (see \code{\link[=write_excel]{write_excel()}}) and Google
+Sheets (see \code{\link[=write_sheet]{write_sheet()}}).}
 }
 }
 \examples{

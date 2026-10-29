@@ -1,4 +1,4 @@
 library(testthat)
-library(GsheetGenie)
+library(magic.table)
 
-test_check("GsheetGenie")
+test_check("magic.table")

@@ -128,7 +128,7 @@ write_sheet <- function(x, ss, sheet, start_row = 1L, overwrite = FALSE,
   if (same_target && !overwrite) {
     current <- .reader(ss, sheet, block)
     if (!identical(current, prior$snapshot)) {
-      warning("The target sheet has changed since GsheetGenie last wrote it; ",
+      warning("The target sheet has changed since magic.table last wrote it; ",
               "not overwriting. Pass `overwrite = TRUE` to write anyway.",
               call. = FALSE)
       return(invisible(x))

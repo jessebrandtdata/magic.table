@@ -1,14 +1,15 @@
-Package: GsheetGenie
-Title: Build Analytical Google Sheets from R
+Package: magic.table
+Title: Turn an R Data Frame into a Live-Formula Table
 Version: 0.0.0.9000
 Authors@R:
     person("Jesse", "Brandt", , "jesse.a.brandt@gmail.com", role = c("aut", "cre"))
 Description: Build external tables whose derived columns are live formulas
     rather than pre-computed values. Wrap a data frame with 'magic.table()' to
     get a recorded-computation table: a lazy 'dplyr::mutate()' records each tidy
-    expression as column provenance instead of evaluating it. The first export
-    backend translates those expressions to A1 spreadsheet-formula syntax and
-    writes them to Google Sheets via 'googlesheets4'. Also ships eager helpers
+    expression as column provenance instead of evaluating it. The export
+    backends translate those expressions to A1 spreadsheet-formula syntax and
+    write them to an Excel workbook via 'openxlsx' or to Google Sheets via
+    'googlesheets4'. Also ships eager helpers
     for data tables flanked by live-formula summary rows (sums, means, etc.).
     Focuses on formula-and-layout logic; no formatting or styling.
 License: MIT + file LICENSE
@@ -17,16 +18,19 @@ Roxygen: list(markdown = TRUE)
 Depends:
     R (>= 4.1.0)
 Imports:
+    lifecycle,
     dplyr,
     googlesheets4,
+    openxlsx,
     rlang,
     tibble
 Suggests:
     testthat (>= 3.0.0),
     knitr,
-    rmarkdown
+    rmarkdown,
+    withr
 Config/testthat/edition: 3
 VignetteBuilder: knitr
-URL: https://github.com/jessebrandtdata/GsheetGenie
-BugReports: https://github.com/jessebrandtdata/GsheetGenie/issues
+URL: https://github.com/jessebrandtdata/magic.table
+BugReports: https://github.com/jessebrandtdata/magic.table/issues
 Config/roxygen2/version: 8.0.0
