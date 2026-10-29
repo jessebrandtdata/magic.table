@@ -1,15 +1,24 @@
 #!/bin/sh
 # check — magic.table's merge gate. exo-watch clones the PR head into a clean
-# box (profile .exo-profile = claude-r: R, testthat, devtools, no network) and
+# box (the fbox profile exo maps this repo to: R, testthat, devtools, no network) and
 # runs this script; exit 0 is green.
 #
 # The box cannot install the package's runtime dependencies, so the gate
 # names its substrate before the dots start: with every Import present it
 # runs the full testthat suite; without them it runs only the identity test
-# (base R + testthat) and prints a SKIP line naming the missing packages.
+# (base R + testthat) and prints a SKIP line naming the missing packages;
+# with no R at all it skips everything, says so, and exits 0 (a skip by
+# substrate, named, never a red that means "the box was wrong").
 # The full suite then runs on the host with `Rscript -e 'devtools::test()'`.
 set -e
 cd "$(dirname "$0")"
+
+if ! command -v Rscript >/dev/null 2>&1; then
+  echo "SKIP everything: no Rscript in this box (the gate needs the profile exo's"
+  echo "repo-profiles.tsv assigns this repo; nothing was verified)"
+  echo "substrate: none"
+  exit 0
+fi
 
 missing=$(Rscript -e '
   need <- c("dplyr", "googlesheets4", "lifecycle", "openxlsx", "rlang",
